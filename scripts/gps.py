@@ -165,7 +165,7 @@ def printWorld( geometries, obstacles, positions, velocities, ids  ):
         m.id = cont
         m.type = m.ARROW
         m.action = 0 # Add/Modify
-        s = 0.01
+        s = 0.02
         m.scale.x = s
         m.scale.y = s*2
         m.scale.z = s*2
@@ -199,7 +199,7 @@ def printWorld( geometries, obstacles, positions, velocities, ids  ):
         m.color.g = 255.0/255
         m.color.b = 255.0/255
         vel = velocities[i]
-        m.text = "ID: " + str( ids[i] ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) ) 
+        m.text = "ID: " + str( ids[i] ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) )
         cont += 1
         markers.append( m )
 

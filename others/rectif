@@ -1,0 +1,2 @@
+ROS_NAMESPACE=usb_cam rosrun image_proc image_proc
+
