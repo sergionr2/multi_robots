@@ -14,6 +14,7 @@ DELTA = 500
 def makeIt():
 
     array = []
+    f = open( NAME, 'w')
     x = 0
     y = 0
     while( x < W ):
@@ -32,9 +33,7 @@ def makeIt():
         p[0] -= X
         p[1] -= Y
     print array
-    f = open( NAME, 'w')
-    for p in array:
-        f.write( str( p[0] ) +','+ str( p[1] ) + '\n' )
+
 
 if __name__ == '__main__':
         makeIt()
