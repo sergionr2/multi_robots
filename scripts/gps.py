@@ -126,9 +126,9 @@ def printWorld( geometries, obstacles, positions, velocities, ids  ):
     m.id = cont
     m.type = m.SPHERE_LIST
     m.action = 0 # Add/Modify
-    m.scale.x = 0.04
-    m.scale.y = 0.04
-    m.scale.z = 0.04
+    m.scale.x = 0.02
+    m.scale.y = 0.02
+    m.scale.z = 0.02
     m.color.a = 1.0
     m.color.r = 255.0/255
     m.color.g = 0/255

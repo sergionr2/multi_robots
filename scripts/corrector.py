@@ -8,7 +8,14 @@ from geometry_msgs.msg import *
 from multi_robots.msg import *
 
 def getTheta( q ):
-    t = math.atan2( 2*(q.w*q.z+q.y*q.x) , 1-2*(q.y**2+q.z**2) )
+    t = -1*math.atan2( 2*(q.w*q.z+q.y*q.x) , 1-2*(q.y**2+q.z**2) )
+    ## To change space
+    t += math.pi/2
+    if( t > math.pi ):
+        t -= 2*math.pi
+    ##
+    return t
+
     return t
 
 def getX( x ):
@@ -30,7 +37,11 @@ def callback(data):
     for i in data.markers:
         p = i.pose.pose.position
         q = i.pose.pose.orientation
-        pose = Pose2D( getX( p.x ), getY( p.y ), getTheta( q ) )
+        #pose = Pose2D( getX( p.x ), getY( p.y ), getTheta( q ) )
+        x = getY( p.y ) - (-0.8)
+        y = getX( p.x ) - (-1.21)
+
+        pose = Pose2D( x, y, getTheta( q ) )
         pub.publish( RobotPose( i.id, pose, rospy.Time.now() ) )
 
 def corrector():
