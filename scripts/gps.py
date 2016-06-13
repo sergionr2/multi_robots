@@ -17,9 +17,9 @@ HZ = 15 #frecuence of publish 15hz
 URL_OBJS = '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/objects.txt'
 URL_MAP = '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/map.txt'
 GEOM ='0.0 , 0.0'
-INIT_X = 0
+INIT_X = 2
 INIT_Y = 0
-INIT_THETA = math.pi /2
+INIT_THETA = math.pi /4
 FRAME = 'World'
 
 robotGeom = {} # int : Point[]
@@ -137,6 +137,8 @@ def printWorld( geometries, obstacles, positions, velocities  ):
     cont += 1
     markers.append( m )
 
+    robotpoints = [( Point( p.x, p.y, 0 )) for p in positions ]
+
     m = Marker()
     m.header.frame_id = FRAME
     m.ns = "positions"
@@ -151,27 +153,34 @@ def printWorld( geometries, obstacles, positions, velocities  ):
     m.color.r = 170.0/255
     m.color.g = 85.0/255
     m.color.b = 255.0/255
-    m.points = [( Point( p.x, p.y, 0 )) for p in positions ]
+    m.points = robotpoints
     cont += 1
     markers.append( m )
 
-    m = Marker()
-    m.header.frame_id = FRAME
-    m.ns = "velocities"
-    m.id = cont
-    m.type = m.SPHERE_LIST
-    m.action = 0 # Add/Modify
-    s = 0.02
-    m.scale.x = s
-    m.scale.y = s
-    m.scale.z = s
-    m.color.a = 1.0
-    m.color.r = 170.0/255
-    m.color.g = 85.0/255
-    m.color.b = 255.0/255
-    m.points = [( Point( p.x, p.y, 0 )) for p in positions ]
-    cont += 1
-    markers.append( m )
+    for i in range( 0,len(velocities) ):
+
+        m = Marker()
+        m.header.frame_id = FRAME
+        m.ns = "velocities"
+        m.id = cont
+        m.type = m.ARROW
+        m.action = 0 # Add/Modify
+        s = 0.01
+        m.scale.x = s
+        m.scale.y = s*2
+        m.scale.z = s*2
+        m.color.a = 1.0
+        m.color.r = 255.0/255
+        m.color.g = 255.0/255
+        m.color.b = 255.0/255
+        s2 = 1 #Scale
+        pos = robotpoints[i]
+        vel = velocities[i]
+        finalVel = Point( pos.x + vel.x*s2,  pos.y + vel.y*s2, pos.z + vel.z*s2 )
+        m.points = [pos, finalVel]
+        cont += 1
+        markers.append( m )
+
     #for i in markers:
     pub.publish( markers )
 
