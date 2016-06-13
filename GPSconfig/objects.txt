@@ -1,0 +1,3 @@
+1,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/robot1.txt
+13,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/robot1.txt
+-5,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/robot1.txt,1.0,1.0,1.57
