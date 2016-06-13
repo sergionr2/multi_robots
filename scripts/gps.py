@@ -97,8 +97,8 @@ def searchIn( pointList, ratio, pose2D ):
                 points.append( p )
     return points
 
-def printWorld( geometries, obstacles, positions, velocities  ):
-             # [ Point[] ], Point[], Pose2D[], Vector3[]
+def printWorld( geometries, obstacles, positions, velocities, ids  ):
+             # [ Point[] ], Point[], Pose2D[], Vector3[], int
     #print Robot TODO
     pub = rospy.Publisher( 'world', MarkerArray, queue_size=10 )
     markers = []
@@ -170,9 +170,9 @@ def printWorld( geometries, obstacles, positions, velocities  ):
         m.scale.y = s*2
         m.scale.z = s*2
         m.color.a = 1.0
-        m.color.r = 60.0/255
-        m.color.g = 100.0/255
-        m.color.b = 150.0/255
+        m.color.r = 255.0/255
+        m.color.g = 170.0/255
+        m.color.b = 0.0/255
         s2 = 1 #Scale
         pos = robotpoints[i]
         vel = velocities[i]
@@ -181,27 +181,27 @@ def printWorld( geometries, obstacles, positions, velocities  ):
         cont += 1
         markers.append( m )
 
-    for i in robotpoints:
+    for i in range( 0,len(robotpoints) ):
 
         m = Marker()
         m.header.frame_id = FRAME
         m.ns = "text"
         m.id = cont
-        m.type = m.ARROW
+        m.type = m.TEXT_VIEW_FACING
         m.action = 0 # Add/Modify
-        s = 12
-        m.scale.z = s*2
+        m.pose.position.x = robotpoints[i].x
+        m.pose.position.y = robotpoints[i].y
+        s = 0.1
+        m.pose.position.z = s
+        m.scale.z = s
         m.color.a = 1.0
-        m.color.r = 0/255
-        m.color.g = 0/255
+        m.color.r = 255.0/255
+        m.color.g = 255.0/255
         m.color.b = 255.0/255
-        s2 = 1 #Scale
-        #pos = robotpoints[i]
-        #vel = velocities[i]
-        #finalVel = Point( pos.x + vel.x*s2,  pos.y + vel.y*s2, pos.z + vel.z*s2 )
-        #m.points = [pos, finalVel]#
+        vel = velocities[i]
+        m.text = "ID: " + str( ids[i] ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) ) 
         cont += 1
-        #markers.append( m )
+        markers.append( m )
 
 
     #for i in markers:
@@ -214,6 +214,7 @@ def publish( pub, key, mapMatrix ):
     geometries = [] #TO PAINT
     positions = [] #TO PAINT
     velocities = [] #TO PAINT
+    ids = [] #TO PAINT
     #CheckForRobots
     enabled = setEnableds() #disabled if pose is older that MAXTIME
     #CreateRobots
@@ -226,10 +227,11 @@ def publish( pub, key, mapMatrix ):
             geometries.append( robotActualGeom[i] )
             positions.append( actualPose )
             velocities.append( actualVelocity )
+            ids.append( i )
         else:
             staticPoints.extend( robotActualGeom[i] )
 
-    printWorld( geometries, staticPoints, positions, velocities )
+    printWorld( geometries, staticPoints, positions, velocities, ids )
 
     #print staticPoints TODO
 
