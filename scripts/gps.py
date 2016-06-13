@@ -170,9 +170,9 @@ def printWorld( geometries, obstacles, positions, velocities  ):
         m.scale.y = s*2
         m.scale.z = s*2
         m.color.a = 1.0
-        m.color.r = 255.0/255
-        m.color.g = 255.0/255
-        m.color.b = 255.0/255
+        m.color.r = 60.0/255
+        m.color.g = 100.0/255
+        m.color.b = 150.0/255
         s2 = 1 #Scale
         pos = robotpoints[i]
         vel = velocities[i]
@@ -180,6 +180,29 @@ def printWorld( geometries, obstacles, positions, velocities  ):
         m.points = [pos, finalVel]
         cont += 1
         markers.append( m )
+
+    for i in robotpoints:
+
+        m = Marker()
+        m.header.frame_id = FRAME
+        m.ns = "text"
+        m.id = cont
+        m.type = m.ARROW
+        m.action = 0 # Add/Modify
+        s = 12
+        m.scale.z = s*2
+        m.color.a = 1.0
+        m.color.r = 0/255
+        m.color.g = 0/255
+        m.color.b = 255.0/255
+        s2 = 1 #Scale
+        #pos = robotpoints[i]
+        #vel = velocities[i]
+        #finalVel = Point( pos.x + vel.x*s2,  pos.y + vel.y*s2, pos.z + vel.z*s2 )
+        #m.points = [pos, finalVel]#
+        cont += 1
+        #markers.append( m )
+
 
     #for i in markers:
     pub.publish( markers )
