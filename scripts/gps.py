@@ -242,14 +242,15 @@ def publish( pub, key, mapMatrix ):
             mapPoints = [] #Posible Obstacles, Every not visible point
             mapPoints.extend( staticPoints )
             for k in idList:
-                if k >= 0:
-                    if i in key and k in key:
-                        if mapMatrix[ key[i] ][ key[k]+1 ] >= 0: # if i can see K
-                            #fill visible robots
-                            visibleRobots.append( robots[i] )
+
+                if i in key and k in key:
+                    if mapMatrix[ key[i] ][ key[k]+1 ] >= 0: # if i can see K
+                        #fill visible robots
+                        visibleRobots.append( robots[i] )
                     else:
                         #Fill Posible Points
                         mapPoints.extend( robotActualGeom[k] )
+
             obstacles = []
             for k in idList:
                 if k >= 0:
