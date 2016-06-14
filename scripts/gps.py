@@ -242,18 +242,20 @@ def publish( pub, key, mapMatrix ):
             mapPoints.extend( staticPoints )
             for k in idList:
                 if k >= 0:
-                    if mapMatrix[ key[i] ][ key[k]+1 ] < 0: # if i cannot see K
+                    if i in key and k in key:
+                        if mapMatrix[ key[i] ][ key[k]+1 ] >= 0: # if i can see K
+                            #fill visible robots
+                            visibleRobots.append( robots[i] )
+                    else:
                         #Fill Posible Points
                         mapPoints.extend( robotActualGeom[k] )
-                    else:
-                        #fill visible robots
-                        visibleRobots.append( robots[i] )
             obstacles = []
             for k in idList:
                 if k >= 0:
-                    #Search for Obtacles
-                    ratio = float( mapMatrix[ key[i] ][ key[k]+1 ] )/1000
-                    obstacles.extend( searchIn( mapPoints, ratio, robots[i].pose ) )
+                    if i in key and k in key:
+                        #Search for Obtacles
+                        ratio = float( mapMatrix[ key[i] ][ key[k]+1 ] )/1000
+                        obstacles.extend( searchIn( mapPoints, ratio, robots[i].pose ) )
             #publish
             pub[i].publish( GPSinfo( obstacles, visibleRobots ) )
 

@@ -1,3 +1,5 @@
-15,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/robot1.txt
-16,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/robot1.txt
--5,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/Border.txt,0.0,0.0,0
+-1,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/border.txt,0,0,0
+1,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/robot1.txt
+6,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/robot1.txt
+3,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/thimioRobot.txt
+4,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/logiTechBox.txt

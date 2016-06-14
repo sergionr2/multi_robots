@@ -3,13 +3,13 @@
 
 import rospy
 
-NAME = "./Border.txt"
+NAME = "./border.txt"
 # ALL IN mm
-W = 1000
-H = 2000
-X = 500
-Y = 1000
-DELTA = 500
+W = 1700
+H = 2400
+X = 0
+Y = 0
+DELTA = 50
 
 def makeIt():
 

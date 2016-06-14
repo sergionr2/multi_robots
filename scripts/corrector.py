@@ -7,6 +7,10 @@ from ar_track_alvar_msgs.msg import AlvarMarkers
 from geometry_msgs.msg import *
 from multi_robots.msg import *
 
+#origins
+X = -1.3
+Y = -0.9
+
 def getTheta( q ):
     t = -1*math.atan2( 2*(q.w*q.z+q.y*q.x) , 1-2*(q.y**2+q.z**2) )
     ## To change space
@@ -38,8 +42,8 @@ def callback(data):
         p = i.pose.pose.position
         q = i.pose.pose.orientation
         #pose = Pose2D( getX( p.x ), getY( p.y ), getTheta( q ) )
-        x = getY( p.y ) - (-0.8)
-        y = getX( p.x ) - (-1.21)
+        x = getY( p.y ) - (Y)
+        y = getX( p.x ) - (X)
 
         pose = Pose2D( x, y, getTheta( q ) )
         pub.publish( RobotPose( i.id, pose, rospy.Time.now() ) )
