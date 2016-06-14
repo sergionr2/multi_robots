@@ -17,8 +17,8 @@ HZ = 15 #frecuence of publish 15hz
 URL_OBJS = '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/objects.txt'
 URL_MAP = '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/map.txt'
 GEOM ='0.0 , 0.0'
-INIT_X = 2
-INIT_Y = 0
+INIT_X = -1
+INIT_Y = -1
 INIT_THETA = math.pi /4
 FRAME = 'World'
 
@@ -26,7 +26,7 @@ robotGeom = {} # int : Point[]
 robotLastPoses = {} # int : RobotPose[N]
 idList = [] # IDs
 #TODO srv set Noise
-A = 0 # Noise Amplitud
+A = 0 # Noise Amplitud m
 
 def setEnableds(): #disabled if pose is older that MAXTIME
 
@@ -59,9 +59,10 @@ def getRobotLastPose( lastPoses ):
         y = poseNew.y
         dx = x - poseOld.x
         dy = y - poseOld.y
-        #add Noise
-        x += A*random.random()
-        y += A*random.random()
+        #add Noise if not inmobile object
+        if len(lastPoses) != 1:
+            x += A*random.random()
+            y += A*random.random()
         return Pose2D( x, y, poseNew.theta ), Vector3( dx/dt, dy/dt, 0 )
     else:
         return Pose2D( INIT_X, INIT_Y, INIT_THETA ), Vector3( 0, 0, 0 )
