@@ -12,7 +12,11 @@ X = -1.3
 Y = -0.9
 
 def getTheta( q ):
+
+
     t = -1*math.atan2( 2*(q.w*q.z+q.y*q.x) , 1-2*(q.y**2+q.z**2) )
+
+
     ## To change space
     t += math.pi/2
     if( t > math.pi ):

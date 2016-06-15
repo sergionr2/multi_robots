@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 
-## Sends messages "@ identifier data data data ." through serial port
-## from the 'sendToID' topic
-
 import sys
 import rospy
 import serial
+import math
 from serial import SerialException
 import struct
 from struct import *
 from std_msgs.msg import String
-from multi_robots.msg import Control_action
-import math
+from geometry_msgs.msg import *
+from multi_robots.msg import *
 
 # recived pose in m, send pose in mm
 scale = 1000 # 1 m = 1000 mm
@@ -28,10 +26,6 @@ def setMaxMin( x, Max, Min ): # set x in the ]min,max[ interval
     return x
 
 def sendGoal(data):
-    pass
-
-def sendPose(data):
-    
     #convertion with 'scale'
     #limits 16bits
     x = setMaxMin( int( data.x * scale ) , 2**(N_BITS-1)-1, -2**(N_BITS-1) )
@@ -39,17 +33,32 @@ def sendPose(data):
     y = setMaxMin(  int( data.y * scale ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
     theta = setMaxMin(  int( data.theta * scaleAngle ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
 
-    ser.write( '@p' ) #init message
+    ser.write( '@G' ) #init message
     ser.write( struct.pack('hhh', x, y, theta) ) # sending int16 int16 int16
     ser.write( '.' ) #end message
-    rospy.loginfo("writing %s + %s + %s\n",str(x),str(y) )
+    rospy.loginfo( "writing goal %s + %s + %s\n",str(x),str(y), str(theta) )
+
+
+def sendPose(data):
+
+    #convertion with 'scale'
+    #limits 16bits
+    x = setMaxMin( int( data.x * scale ) , 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    #works for signed variables
+    y = setMaxMin(  int( data.y * scale ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    theta = setMaxMin(  int( data.theta * scaleAngle ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+
+    ser.write( '@P' ) #init message
+    ser.write( struct.pack('hhh', x, y, theta) ) # sending int16 int16 int16
+    ser.write( '.' ) #end message
+    rospy.loginfo("writing pos %s + %s + %s\n",str(x),str(y), str(theta) )
 
 def shutDown():
     ser.close()
 
 def sender(robotID, port, baudRate):
 
-    rospy.init_node('sender', anonymous=True)
+    rospy.init_node('Sender_'+ str( robotID ), anonymous=False)
     rospy.on_shutdown( shutDown )
     global ser
     try:
@@ -65,7 +74,7 @@ def sender(robotID, port, baudRate):
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print("usage: sender.py ID Port BaudRate --default--> 01 /dev/ttyUSB0 9600 ")
-	sender( 06, '/dev/ttyUSB0', 9600)
+	sender( 06, '/dev/ttyUSB1', 9600)
     else:
         if len(sys.argv) < 4:
             sender( int(sys.argv[1]), sys.argv[2], 9600 )
