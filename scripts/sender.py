@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## Sends messages "@ @ data data ." through serial port
+## Sends messages "@ identifier data data data ." through serial port
 ## from the 'sendToID' topic
 
 import sys
@@ -11,10 +11,11 @@ import struct
 from struct import *
 from std_msgs.msg import String
 from multi_robots.msg import Control_action
+import math
 
 # recived pose in m, send pose in mm
 scale = 1000 # 1 m = 1000 mm
-
+scaleAngle = 180/math.pi # to degrees
 N_BYTES = 2 # number of bytes to send for each variable, this case int16
 N_BITS = N_BYTES * 8
 ser = 0 # serial comunication
@@ -26,17 +27,22 @@ def setMaxMin( x, Max, Min ): # set x in the ]min,max[ interval
         x = Min + 1
     return x
 
-def callback(data):
-    #rospy.loginfo(rospy.get_caller_id() + " I heard %s %s", data.v_right, data.v_left)
+def sendGoal(data):
+    pass
+
+def sendPose(data):
+    
     #convertion with 'scale'
     #limits 16bits
-    velocity_right = setMaxMin( int( data.v_right * scale ) , 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    x = setMaxMin( int( data.x * scale ) , 2**(N_BITS-1)-1, -2**(N_BITS-1) )
     #works for signed variables
-    velocity_left = setMaxMin(  int( data.v_left * scale ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
-    ser.write( '@@' ) #init message
-    ser.write( struct.pack('hh', velocity_right, velocity_left) ) # sending int16 int16
+    y = setMaxMin(  int( data.y * scale ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    theta = setMaxMin(  int( data.theta * scaleAngle ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+
+    ser.write( '@p' ) #init message
+    ser.write( struct.pack('hhh', x, y, theta) ) # sending int16 int16 int16
     ser.write( '.' ) #end message
-    rospy.loginfo("writing %s + %s\n",str(velocity_right),str(velocity_left) )
+    rospy.loginfo("writing %s + %s + %s\n",str(x),str(y) )
 
 def shutDown():
     ser.close()
@@ -52,7 +58,8 @@ def sender(robotID, port, baudRate):
         print("Unable to set communication, verify PORT")
         exit();
     print("Talking in " + port + " at " + str(baudRate) + "\n")
-    rospy.Subscriber( "sendTo_" + str( robotID ) , Control_action, callback )
+    rospy.Subscriber( "goal_" + str( robotID ) , Pose2D, sendGoal )
+    rospy.Subscriber( "pose_" + str( robotID ) , Pose2D, sendPose )
     rospy.spin()
 
 if __name__ == '__main__':
