@@ -14,6 +14,7 @@ from multi_robots.msg import Control_action
 
 # recived pose in m, send pose in mm
 scale = 1000 # 1 m = 1000 mm
+
 N_BYTES = 2 # number of bytes to send for each variable, this case int16
 N_BITS = N_BYTES * 8
 ser = 0 # serial comunication
@@ -57,7 +58,7 @@ def sender(robotID, port, baudRate):
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print("usage: sender.py ID Port BaudRate --default--> 01 /dev/ttyUSB0 9600 ")
-	sender( 01, '/dev/ttyUSB0', 9600)
+	sender( 06, '/dev/ttyUSB0', 9600)
     else:
         if len(sys.argv) < 4:
             sender( int(sys.argv[1]), sys.argv[2], 9600 )

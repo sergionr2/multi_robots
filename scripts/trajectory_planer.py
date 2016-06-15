@@ -115,10 +115,21 @@ def printData( data ):
     pub.publish( markers )
 
 def getInfo( data ):
-    if( True ): #TODO if i can see me
-        pubPose = rospy.Publisher('pose_'+str(ID), Pose2D, queue_size=10)
     printData( data )
 
+    canISeeMe = False
+    me = 0
+    for r in data.robots:
+        if( r.id == ID ):
+            canISeeMe = True
+            me = r
+            data.robots.remove(r)
+
+    if( canISeeMe ): # if i can see me
+        pubPose = rospy.Publisher('pose_'+str(ID), Pose2D, queue_size=10)
+        pubPose.publish( me.pose )
+    else:
+        pass #do something if i am blind
 
 def setGoal():
     return Pose2D( 1,1,0 )
