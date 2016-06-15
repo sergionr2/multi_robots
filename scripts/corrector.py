@@ -17,9 +17,6 @@ def getTheta( q ):
     t += math.pi/2
     if( t > math.pi ):
         t -= 2*math.pi
-    ##
-    return t
-
     return t
 
 def getX( x ):

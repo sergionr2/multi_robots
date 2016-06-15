@@ -258,7 +258,7 @@ def publish( pub, key, mapMatrix ):
                     if i in key and k in key:
                         #Search for Obtacles
                         ratio = float( mapMatrix[ key[i] ][ key[k]+1 ] )/1000
-                        obstacles.extend( searchIn( mapPoints, ratio, robots[i].pose ) )
+                        obstacles.extend( searchIn( mapPoints, ratio, robots[k].pose ) )
             #publish
             pub[i].publish( GPSinfo( obstacles, visibleRobots ) )
 
