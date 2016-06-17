@@ -3,6 +3,7 @@
  *  to start '@''@' the values byte by byte and '.' to finish
  *  
  */
+ #include "TimerOne.h"
 const byte N_BYTES = 2; // size of values recived
 const byte N_VALUES = 3; // number of values to recive
 byte incomingData[ N_BYTES*N_VALUES + 1 ]; // +1 end character
@@ -27,6 +28,21 @@ const int leftDir = 13; // DIR B
 
 const int ledPin = 10; // LED
 
+int x = 0;
+int y = 0;
+int theta = 0;
+
+int xGoal = 0;
+int yGoal = 0;
+int thetaGoal = 0;
+
+int distError = 0;
+int distAcumError = 0;
+
+int angleError = 0;
+int angleAcumError = 0;
+int duty = 0;
+
 void setup() {
   pinMode( rightPWM, OUTPUT ); //Defining pins as output
   pinMode( leftPWM, OUTPUT );
@@ -35,15 +51,11 @@ void setup() {
   pinMode( ledPin, OUTPUT ); 
   Serial.begin( 9600 );
   
+  Timer1.initialize(100000); 
+  Timer1.attachInterrupt( control );
   digitalWrite( ledPin, HIGH );
   analogWrite( rightPWM, 0 );
   analogWrite( leftPWM, 0 );
-}
-
-byte velToOmega( int vel ){
-  byte omega = 0; // value from 0 to 255
-  
-  return 200; //TODO
 }
 
 void setVelocity( int pwmPin, int dirPin, int vel ){ // pwm_pin, direction_pin, velocity
@@ -53,12 +65,35 @@ void setVelocity( int pwmPin, int dirPin, int vel ){ // pwm_pin, direction_pin, 
   else
     digitalWrite( dirPin, HIGH );
   vel = abs( vel );
-  analogWrite( pwmPin, velToOmega( vel ) ); // OUTPUT from 0 to 255
+  analogWrite( pwmPin, vel );
   if(DEBUG)Serial.println("Velocity Set");
 }
+void control()
+{
+    // constantes PID
+    float Kp = 2;
+    float Ki = 0;
+    angleError = theta - thetaGoal;
+    angleAcumError += angleError;
+    duty = Kp*angleError; //Verify limits TODO
+    setVelocity( rightPWM, rightDir, duty);
+    setVelocity( leftPWM, leftDir, -1*duty);
+}
+void setPose( int newX, int newY, int newTheta ){
+  x = newX;
+  y = newY;
+  theta = newTheta;   
+}
 
-// protocol ( start start V_r V_l end )
-void loop() {    
+void setGoal( int newX, int newY, int newTheta ){
+  xGoal = newX;
+  yGoal = newY;
+  thetaGoal = newTheta;   
+}
+
+
+void loop() { 
+  Serial.println(duty);  
   digitalWrite( ledPin, HIGH );
   if ( Serial.available() > 0 && !firstStart) {
     incomingByte = Serial.read();
@@ -70,9 +105,9 @@ void loop() {
   if (Serial.available() > 0 && firstStart ){
     incomingByte = Serial.read();  
     if( (incomingByte == POS_CHAR || incomingByte == GOAL_CHAR) && firstStart ){ // if START ---> @ G || @ P
-      bool setGoal = false;
+      bool isGoal = false;
       if( incomingByte == GOAL_CHAR )
-         setGoal = true;
+         isGoal = true;
       if(DEBUG)Serial.println("Start");
       while(Serial.available() < N_BYTES*N_VALUES + 1 ){ // wait until reciving the values and the end character
       }
@@ -95,12 +130,12 @@ void loop() {
           */
         }
         digitalWrite( ledPin, LOW );
-        if( setGoal ){
-          //setGoal
+        if( isGoal ){
+          setGoal( values[0], values[1], values[2] );
           if(DEBUG)Serial.println("setGoal");
         }
         else{
-          //setPose
+          setPose( values[0], values[1], values[2] );
           if(DEBUG)Serial.println("setPose");
         }
 

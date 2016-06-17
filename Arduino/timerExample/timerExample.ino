@@ -1,4 +1,10 @@
-//Pins
+/*
+ *  Timer1 library example
+ *  June 2008 | jesse dot tane at gmail dot com
+ */
+ 
+#include "TimerOne.h"
+ //Pins
 const int DIRA = 12; //Connect on Pin 12
 const int PWMA = 3; //Connect on Pin 3
 const int DIRB = 13; //Connect on Pin 13
@@ -30,12 +36,15 @@ void setup() {
   Serial.begin(9600);
 
   Serial.println("SETUP OK");
-
-  
+  Timer1.initialize(100000); 
+  Timer1.attachInterrupt(callback);
 }
-
-void loop(){
-  digitalWrite(ledPin, HIGH);
+ 
+void callback()
+{
+  digitalWrite(ledPin, digitalRead(ledPin) ^ 1);
+}
+ void loop(){
   Serial.print("income = ");
   Serial.println(income);
   Serial.print("check_start = ");
