@@ -141,7 +141,7 @@ def planer():
     rospy.Subscriber( "info_"+str(ID) , GPSinfo, getInfo )
     while not rospy.is_shutdown():
 
-        pubGoal.publish( setGoal() )
+        #pubGoal.publish( setGoal() )
         rate.sleep()
 
 if __name__ == '__main__':

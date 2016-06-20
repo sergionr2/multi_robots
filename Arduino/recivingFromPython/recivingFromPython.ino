@@ -4,6 +4,7 @@
  *  
  */
  #include "TimerOne.h"
+ #include "math.h"
 const byte N_BYTES = 2; // size of values recived
 const byte N_VALUES = 3; // number of values to recive
 byte incomingData[ N_BYTES*N_VALUES + 1 ]; // +1 end character
@@ -28,20 +29,32 @@ const int leftDir = 13; // DIR B
 
 const int ledPin = 10; // LED
 
+const double R = 30;
+const double L = 100;
+
+const int W_MAX = 13; //rads/s
+const int W_MIN = 2;
+
+const int V_MAX = 9; //rads/s
+const int V_MIN = 2;
+const int D = 400; // if error larger than D use V_MAX
+
+const float KP = 5;
+const float KP_V = V_MAX/D;
+
+const int MAX_ANGLE_ERROR = 5;
+const int MAX_POS_ERROR = 10;
+
 int x = 0;
 int y = 0;
-int theta = 0;
+double theta = 0;
 
 int xGoal = 0;
 int yGoal = 0;
-int thetaGoal = 0;
+double thetaGoal = 0;
 
 int distError = 0;
-int distAcumError = 0;
-
 int angleError = 0;
-int angleAcumError = 0;
-int duty = 0;
 
 void setup() {
   pinMode( rightPWM, OUTPUT ); //Defining pins as output
@@ -51,49 +64,75 @@ void setup() {
   pinMode( ledPin, OUTPUT ); 
   Serial.begin( 9600 );
   
-  Timer1.initialize(100000); 
+  Timer1.initialize(50000); // 20Hz  --> 50000 microSecs period 
   Timer1.attachInterrupt( control );
   digitalWrite( ledPin, HIGH );
   analogWrite( rightPWM, 0 );
   analogWrite( leftPWM, 0 );
 }
 
-void setVelocity( int pwmPin, int dirPin, int vel ){ // pwm_pin, direction_pin, velocity
+void setVelocity( int pwmPin, int dirPin, long w ){ // pwm_pin, direction_pin, velocity
   if(DEBUG)Serial.println("Seting Velocity");
-  if( vel < 0 )
+  if( w < 0 )
     digitalWrite( dirPin, LOW );
   else
     digitalWrite( dirPin, HIGH );
-  vel = abs( vel );
-  analogWrite( pwmPin, vel );
+  w = abs( w );
+  int w_pwm = 0.2154 * w * R + 64.02; 
+  
+  analogWrite( pwmPin, w_pwm );
   if(DEBUG)Serial.println("Velocity Set");
 }
 void control()
 {
-    // constantes PID
-    float Kp = 2;
-    float Ki = 0;
-    angleError = theta - thetaGoal;
-    angleAcumError += angleError;
-    duty = Kp*angleError; //Verify limits TODO
-    setVelocity( rightPWM, rightDir, duty);
-    setVelocity( leftPWM, leftDir, -1*duty);
+  double d_x = xGoal - x;
+  double d_y = yGoal - y;
+  double norm = sqrt( d_x*d_x + d_y*d_y );
+  double dotProduct = d_x*-1*sin(theta) + d_y*cos(theta);
+  double angle_error = acos( dotProduct/norm );
+
+  double dotProduct2 = d_x*-1*sin(theta+0.01) + d_y*cos(theta+0.01);
+  double next_error = acos( dotProduct2/norm );
+  if( next_error > angle_error )
+    angle_error *= -1; 
+  double w_r = angle_error*KP;
+
+  if( w_r > W_MAX )
+    w_r = W_MAX;
+  else{
+    if( w_r < -1*W_MAX )
+       w_r = -1*W_MAX;
+    else{
+      if( w_r < W_MIN && w_r > -1*W_MIN ){
+        if( w_r > 0 )
+          w_r = W_MIN;
+        else
+          w_r = -1*W_MIN;
+      }
+    }
+  }
+  if( angle_error *180/M_PI > -1*MAX_ANGLE_ERROR && angle_error *180/M_PI < MAX_ANGLE_ERROR)
+    w_r = 0;
+  double w_l = -1*w_r; 
+
+  
+  setVelocity( rightPWM, rightDir, w_r );
+  setVelocity( leftPWM, leftDir, w_l );
 }
 void setPose( int newX, int newY, int newTheta ){
   x = newX;
   y = newY;
-  theta = newTheta;   
+  theta = newTheta*M_PI/180;   
 }
 
 void setGoal( int newX, int newY, int newTheta ){
   xGoal = newX;
   yGoal = newY;
-  thetaGoal = newTheta;   
+  thetaGoal = newTheta*M_PI/180;   
 }
 
 
-void loop() { 
-  Serial.println(duty);  
+void loop() {   
   digitalWrite( ledPin, HIGH );
   if ( Serial.available() > 0 && !firstStart) {
     incomingByte = Serial.read();

@@ -74,7 +74,7 @@ def sender(robotID, port, baudRate):
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         print("usage: sender.py ID Port BaudRate --default--> 01 /dev/ttyUSB0 9600 ")
-	sender( 06, '/dev/ttyUSB1', 9600)
+	sender( 06, '/dev/ttyUSB0', 9600)
     else:
         if len(sys.argv) < 4:
             sender( int(sys.argv[1]), sys.argv[2], 9600 )
