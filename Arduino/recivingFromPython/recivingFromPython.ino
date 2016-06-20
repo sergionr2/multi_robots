@@ -40,7 +40,7 @@ const int V_MIN = 2;
 const int D = 400; // if error larger than D use V_MAX
 
 const float KP = 5;
-const float KP_V = V_MAX/D;
+const float KP_V = float(V_MAX)/D;
 
 const int MAX_ANGLE_ERROR = 5;
 const int MAX_POS_ERROR = 10;
@@ -49,8 +49,8 @@ int x = 0;
 int y = 0;
 double theta = 0;
 
-int xGoal = 0;
-int yGoal = 0;
+int xGoal = 1000;
+int yGoal = 1000;
 double thetaGoal = 0;
 
 int distError = 0;
@@ -71,7 +71,7 @@ void setup() {
   analogWrite( leftPWM, 0 );
 }
 
-void setVelocity( int pwmPin, int dirPin, long w ){ // pwm_pin, direction_pin, velocity
+void setVelocity( int pwmPin, int dirPin, double w ){ // pwm_pin, direction_pin, velocity
   if(DEBUG)Serial.println("Seting Velocity");
   if( w < 0 )
     digitalWrite( dirPin, LOW );
@@ -79,6 +79,8 @@ void setVelocity( int pwmPin, int dirPin, long w ){ // pwm_pin, direction_pin, v
     digitalWrite( dirPin, HIGH );
   w = abs( w );
   int w_pwm = 0.2154 * w * R + 64.02; 
+  if( w_pwm < 65 )
+    w_pwm = 0;
   
   analogWrite( pwmPin, w_pwm );
   if(DEBUG)Serial.println("Velocity Set");
@@ -114,8 +116,27 @@ void control()
   if( angle_error *180/M_PI > -1*MAX_ANGLE_ERROR && angle_error *180/M_PI < MAX_ANGLE_ERROR)
     w_r = 0;
   double w_l = -1*w_r; 
-
-  
+  double s = KP_V * norm;
+   if( s > V_MAX )
+    s = V_MAX;
+  else{
+    if( s < -1*V_MAX )
+       s = -1*V_MAX;
+    else{
+      if( s < V_MIN && s > -1*V_MIN ){
+        if( s > 0 )
+          s = V_MIN;
+        else
+          s = -1*V_MIN;
+      }
+    }
+  }
+  w_r += s;
+  w_l += s; 
+  if( norm < MAX_POS_ERROR && norm > -1*MAX_POS_ERROR ){
+    w_r = 0;
+    w_l = 0;
+  }
   setVelocity( rightPWM, rightDir, w_r );
   setVelocity( leftPWM, leftDir, w_l );
 }
