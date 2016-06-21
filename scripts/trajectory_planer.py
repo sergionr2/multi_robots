@@ -7,7 +7,7 @@ from multi_robots.msg import *
 from std_msgs.msg import *
 from visualization_msgs.msg import *
 
-HZ = 0.5 #frecuence of publish reference in hz
+HZ = 0.066 #frecuence of publish reference in hz
 ID = 6
 FRAME = 'Local_'+str(ID)
 
@@ -131,17 +131,22 @@ def getInfo( data ):
     else:
         pass #do something if i am blind
 
-def setGoal():
-    return Pose2D( 1,1,0 )
+def setGoal( cont ):
+    x = [0.2,1.4,1.4,0.2]
+    y = [0.2,0.2,2.0,2.0]
+    rospy.loginfo( "writing goal %s + %s + %s\n",x[cont%4],y[cont%4], 0 )
+    return Pose2D( x[cont%4],y[cont%4],0 )
 
 def planer():
     pubGoal = rospy.Publisher('goal_'+str(ID), Pose2D, queue_size=10)
     rospy.init_node('Trajectory_Planer_'+str(ID), anonymous=False)
     rate = rospy.Rate( HZ ) # 10hz
     rospy.Subscriber( "info_"+str(ID) , GPSinfo, getInfo )
+    cont = 0
     while not rospy.is_shutdown():
 
-        #pubGoal.publish( setGoal() )
+        pubGoal.publish( setGoal( cont ) )
+        cont += 1
         rate.sleep()
 
 if __name__ == '__main__':
