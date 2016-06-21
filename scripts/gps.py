@@ -13,7 +13,7 @@ from visualization_msgs.msg import *
 
 MAXTIME = 1 #seconds, time to unable if not visible
 N = 20 #number of points to calcul velocity
-HZ = 15 #frecuence of publish 15hz
+HZ = 30 #frecuence of publish 15hz
 URL_OBJS = '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/objects.txt'
 URL_MAP = '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/map.txt'
 GEOM ='0.0 , 0.0'

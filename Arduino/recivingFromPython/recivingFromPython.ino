@@ -32,18 +32,18 @@ const int ledPin = 10; // LED
 const double R = 30;
 const double L = 100;
 
-const int W_MAX = 13; //rads/s
-const int W_MIN = 2;
+const float W_MAX = 5; //rads/s
+const float W_MIN = 3;
 
-const int V_MAX = 9; //rads/s
-const int V_MIN = 2;
+const float V_MAX = 5; //rads/s
+const float V_MIN = 2.2;
 const int D = 400; // if error larger than D use V_MAX
 
 const float KP = 5;
 const float KP_V = float(V_MAX)/D;
 
 const int MAX_ANGLE_ERROR = 5;
-const int MAX_POS_ERROR = 10;
+const int MAX_POS_ERROR = 20;
 
 int x = 0;
 int y = 0;
@@ -64,7 +64,7 @@ void setup() {
   pinMode( ledPin, OUTPUT ); 
   Serial.begin( 9600 );
   
-  Timer1.initialize(50000); // 20Hz  --> 50000 microSecs period 
+  Timer1.initialize(33333); // 30Hz  --> 33333 microSecs period 
   Timer1.attachInterrupt( control );
   digitalWrite( ledPin, HIGH );
   analogWrite( rightPWM, 0 );

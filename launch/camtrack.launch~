@@ -23,7 +23,7 @@
     <arg name="cam_image_topic" default="/usb_cam/image_raw" />
     <arg name="cam_info_topic" default="/usb_cam/camera_info" />	
     <arg name="output_frame" default="usb_cam" />
-    <arg name="max_frequency" default="20" />
+    <arg name="max_frequency" default="30" />
 
     <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg max_frequency) " />
 </launch>
