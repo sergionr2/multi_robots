@@ -56,8 +56,9 @@ def setPose(data):
 
     distance_error = math.sqrt( d_x**2 + d_y**2 ) #distance to Goal
     #TODO comenter pour quoi -sin et cos et pas cos et sin
+    print "Distance To Goal: " + str(distance_error) + '\n'
     angle_error = 0
-    if distance_error != 0 :
+    if distance_error > MAX_POS_ERROR :
         dotProduct = d_x*-1*math.sin( ang ) + d_y*math.cos( ang ) #proyection of the distance and angle vectors
         angle_error = math.acos( dotProduct/distance_error ) # Angle between the vector from 0 to pi
         # To know the turning direction (if the error is negative)
