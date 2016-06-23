@@ -26,7 +26,7 @@ def translatePoint( point3D, pose2D ):#rotation en Z
     newPoint.y += pose2D.y
     return newPoint #point3D
 
-def printData( data ):
+def printData( info ):
 
     pub = rospy.Publisher( 'local_'+str(ID), MarkerArray, queue_size=10 )
     markers = []
@@ -49,11 +49,11 @@ def printData( data ):
     m.color.r = 255.0/255
     m.color.g = 0/255
     m.color.b = 0/255
-    m.points = data.obstacles
+    m.points = info.obstacles
     cont += 1
     markers.append( m )
 
-    for r in data.robots:
+    for r in info.robots:
         m = Marker()
         m.header.frame_id = FRAME
         m.ns = "Geom"
@@ -114,16 +114,16 @@ def printData( data ):
         markers.append( m )
     pub.publish( markers )
 
-def getInfo( data ):
-    printData( data )
+def getInfo( info ):
+    printData( info )
 
     canISeeMe = False
     me = 0
-    for r in data.robots:
+    for r in info.robots:
         if( r.id == ID ):
             canISeeMe = True
             me = r
-            data.robots.remove(r)
+            info.robots.remove(r)
 
     if( canISeeMe ): # if i can see me
         pubPose = rospy.Publisher('pose_'+str(ID), Pose2D, queue_size=10)

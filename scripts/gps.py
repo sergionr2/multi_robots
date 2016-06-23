@@ -11,7 +11,7 @@ from multi_robots.msg import *
 from std_msgs.msg import *
 from visualization_msgs.msg import *
 
-MAXTIME = 1 #seconds, time to unable if not visible
+MAXTIME = 0.5 #seconds, time to unable if not visible
 N = 20 #number of points to calcul velocity
 HZ = 30 #frecuence of publish 30hz
 URL_OBJS = '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/objects.txt'
@@ -98,29 +98,15 @@ def searchIn( pointList, ratio, pose2D ):
                 points.append( p )
     return points
 
-def printWorld( geometries, obstacles, positions, velocities, ids  ):
-             # [ Point[] ], Point[], Pose2D[], Vector3[], int
-    #print Robot TODO
-    pub = rospy.Publisher( 'world', MarkerArray, queue_size=10 )
+def printWorld( robots, obstacles, enableds ):
+    pub = rospy.Publisher( 'World', MarkerArray, queue_size=10 )
     markers = []
     cont = 0
-    for i in geometries:
-        m = Marker()
-        m.header.frame_id = FRAME
-        m.ns = "geometries"
-        m.id = cont
-        m.type = m.LINE_STRIP # LINE
-        m.action = 0 # Add/Modify
-        m.scale.x = 0.01
-        m.scale.y = 0.01
-        m.scale.z = 0.01
-        m.color.a = 1.0
-        m.color.r = 25.0/255
-        m.color.g = 255.0/255
-        m.color.b = 0.0/255
-        m.points = i
-        markers.append( m )
-        cont += 1
+    m = Marker()
+    m.action = 3 # erase all
+    markers.append( m )
+    cont += 1
+
     m = Marker()
     m.header.frame_id = FRAME
     m.ns = "obstacles"
@@ -138,51 +124,46 @@ def printWorld( geometries, obstacles, positions, velocities, ids  ):
     cont += 1
     markers.append( m )
 
-    robotpoints = [( Point( p.x, p.y, 0 )) for p in positions ]
-
-    m = Marker()
-    m.header.frame_id = FRAME
-    m.ns = "positions"
-    m.id = cont
-    m.type = m.SPHERE_LIST
-    m.action = 0 # Add/Modify
-    s = 0.02
-    m.scale.x = s
-    m.scale.y = s
-    m.scale.z = s
-    m.color.a = 1.0
-    m.color.r = 170.0/255
-    m.color.g = 85.0/255
-    m.color.b = 255.0/255
-    m.points = robotpoints
-    cont += 1
-    markers.append( m )
-
-    for i in range( 0,len(velocities) ):
+    for r in robots:
+        m = Marker()
+        m.header.frame_id = FRAME
+        m.ns = "Geom"
+        m.id = cont
+        m.type = m.LINE_STRIP # LINE
+        if( enableds[r.id] ):
+            m.color = ColorRGBA( 25.0/255 ,1, 0, 1 )
+        else:
+            m.color = ColorRGBA( 255.0/255 ,170.0/255, 0, 1 )
+        m.scale = Vector3( 0.01, 0.01, 0.01 )
+        points = [ translatePoint( p, r.pose ) for p in r.geometry ]
+        m.points = points
+        markers.append( m )
+        cont += 1
 
         m = Marker()
         m.header.frame_id = FRAME
-        m.ns = "velocities"
+        m.ns = "Pos"
+        m.id = cont
+        m.type = m.SPHERE
+        m.pose.position = Point( r.pose.x, r.pose.y, 0 )
+        m.color = ColorRGBA( 170.0/255 ,85.0/255, 255/255, 1 )
+        m.scale = Vector3( 0.02, 0.02, 0.02 )
+        markers.append( m )
+        cont += 1
+
+        m = Marker()
+        m.header.frame_id = FRAME
+        m.ns = "vel"
         m.id = cont
         m.type = m.ARROW
-        m.action = 0 # Add/Modify
-        s = 0.02
-        m.scale.x = s
-        m.scale.y = s*2
-        m.scale.z = s*2
-        m.color.a = 1.0
-        m.color.r = 255.0/255
-        m.color.g = 170.0/255
-        m.color.b = 0.0/255
-        s2 = 1 #Scale
-        pos = robotpoints[i]
-        vel = velocities[i]
-        finalVel = Point( pos.x + vel.x*s2,  pos.y + vel.y*s2, pos.z + vel.z*s2 )
-        m.points = [pos, finalVel]
-        cont += 1
+        m.color = ColorRGBA( 1 ,170.0/255, 0, 1 )
+        s2 = 0.2
+        m.scale = Vector3( 0.02, 0.04, 0.04 )
+        pos = Point( r.pose.x, r.pose.y, 0 )
+        vel = r.velocity
+        m.points = [ pos, Point( pos.x + vel.x*s2,  pos.y + vel.y*s2, pos.z + vel.z*s2 )]
         markers.append( m )
-
-    for i in range( 0,len(robotpoints) ):
+        cont += 1
 
         m = Marker()
         m.header.frame_id = FRAME
@@ -190,8 +171,8 @@ def printWorld( geometries, obstacles, positions, velocities, ids  ):
         m.id = cont
         m.type = m.TEXT_VIEW_FACING
         m.action = 0 # Add/Modify
-        m.pose.position.x = robotpoints[i].x
-        m.pose.position.y = robotpoints[i].y
+        m.pose.position.x = pos.x
+        m.pose.position.y = pos.y
         s = 0.1
         m.pose.position.z = s
         m.scale.z = s
@@ -199,23 +180,16 @@ def printWorld( geometries, obstacles, positions, velocities, ids  ):
         m.color.r = 255.0/255
         m.color.g = 255.0/255
         m.color.b = 255.0/255
-        vel = velocities[i]
-        m.text = "ID: " + str( ids[i] ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) )
+        m.text = "ID: " + str( r.id ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) )
         cont += 1
         markers.append( m )
-
-
-    #for i in markers:
     pub.publish( markers )
 
 def publish( pub, key, mapMatrix ):
     robotActualGeom = {}
     robots = {}
     staticPoints = []
-    geometries = [] #TO PAINT
-    positions = [] #TO PAINT
-    velocities = [] #TO PAINT
-    ids = [] #TO PAINT
+
     #CheckForRobots
     enabled = setEnableds() #disabled if pose is older that MAXTIME
     #CreateRobots
@@ -225,16 +199,11 @@ def publish( pub, key, mapMatrix ):
         robotActualGeom[i] = [ translatePoint( p, actualPose ) for p in robotGeom[i] ]
         if( i >= 0 ):
             robots[i] =  Robot( i, actualPose, actualVelocity, robotGeom[i] )
-            geometries.append( robotActualGeom[i] )
-            positions.append( actualPose )
-            velocities.append( actualVelocity )
-            ids.append( i )
         else:
             staticPoints.extend( robotActualGeom[i] )
 
-    printWorld( geometries, staticPoints, positions, velocities, ids )
-
-    #print staticPoints TODO
+    #print staticPoints
+    printWorld( robots.values(), staticPoints, enabled )
 
     for i in idList: #iterate every robot
         if i >= 0 and enabled[i]:
@@ -242,19 +211,20 @@ def publish( pub, key, mapMatrix ):
             mapPoints = [] #Posible Obstacles, Every not visible point
             mapPoints.extend( staticPoints )
             for k in idList:
-                if i in key and k in key:
-                    if mapMatrix[ key[i] ][ key[k]+1 ] >= 0: # if i can see K
-                        #fill visible robots
-                        visibleRobots.append( robots[k] )
+                if enabled[k]:
+                    if i in key and k in key:
+                        if mapMatrix[ key[i] ][ key[k]+1 ] >= 0: # if i can see K
+                            #fill visible robots
+                            visibleRobots.append( robots[k] )
+                        else:
+                            #Fill Posible Points
+                            mapPoints.extend( robotActualGeom[k] )
                     else:
                         #Fill Posible Points
                         mapPoints.extend( robotActualGeom[k] )
-                else:
-                    #Fill Posible Points
-                    mapPoints.extend( robotActualGeom[k] )
             obstacles = []
             for k in idList:
-                if k >= 0:
+                if k >= 0 and enabled[k]:
                     if i in key and k in key:
                         #Search for Obtacles
                         ratio = float( mapMatrix[ key[i] ][ key[k]+1 ] )/1000
