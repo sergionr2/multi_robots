@@ -56,6 +56,8 @@ double thetaGoal = 0;
 int distError = 0;
 int angleError = 0;
 
+unsigned int counterOfLastSetPos = 0; //millis
+
 void setup() {
   pinMode( rightPWM, OUTPUT ); //Defining pins as output
   pinMode( leftPWM, OUTPUT );
@@ -78,12 +80,11 @@ void setVelocity( int pwmPin, int dirPin, double w ){ // pwm_pin, direction_pin,
   else
     digitalWrite( dirPin, HIGH );
   w = abs( w );
-  int w_pwm = 0.2154 * w * R + 64.02; 
+  byte w_pwm = 0.2154 * w * R + 64.02; 
   if( w_pwm < 65 )
-    w_pwm = 0;
-  
+    w_pwm = 0;  
+  Serial.println( w_pwm ); 
   analogWrite( pwmPin, w_pwm );
-  if(DEBUG)Serial.println("Velocity Set");
 }
 void control()
 {
@@ -117,6 +118,12 @@ void control()
     w_r = 0;
   double w_l = -1*w_r; 
   double s = KP_V * norm;
+
+  s *= 100 - counterOfLastSetPos*0.01; // 1%
+  
+  if ( counterOfLastSetPos < 1.0/0.01)
+    counterOfLastSetPos++;
+  
    if( s > V_MAX )
     s = V_MAX;
   else{
@@ -143,7 +150,8 @@ void control()
 void setPose( int newX, int newY, int newTheta ){
   x = newX;
   y = newY;
-  theta = newTheta*M_PI/180;   
+  theta = newTheta*M_PI/180;    
+  counterOfLastSetPos = 0;
 }
 
 void setGoal( int newX, int newY, int newTheta ){
@@ -196,7 +204,6 @@ void loop() {
         }
         else{
           setPose( values[0], values[1], values[2] );
-          if(DEBUG)Serial.println("setPose");
         }
 
 

@@ -21,10 +21,13 @@ INIT_X = -1
 INIT_Y = -1
 INIT_THETA = math.pi /4
 FRAME = 'World'
+DEFAULT_GEOM = [ Point( 0, 0, 0 ) ]
 
 robotGeom = {} # int : Point[]
 robotLastPoses = {} # int : RobotPose[N]
 idList = [] # IDs
+topicList = {} # int : pub
+
 #TODO srv set Noise
 A = 0 # Noise Amplitud m
 
@@ -185,7 +188,7 @@ def printWorld( robots, obstacles, enableds ):
         markers.append( m )
     pub.publish( markers )
 
-def publish( pub, key, mapMatrix ):
+def publish( ids, key, mapMatrix ):
     robotActualGeom = {}
     robots = {}
     staticPoints = []
@@ -193,7 +196,7 @@ def publish( pub, key, mapMatrix ):
     #CheckForRobots
     enabled = setEnableds() #disabled if pose is older that MAXTIME
     #CreateRobots
-    for i in idList: #iterate every id
+    for i in ids: #iterate every id
         #getActualPose and velocity
         actualPose, actualVelocity = getRobotLastPose( robotLastPoses[i] )
         robotActualGeom[i] = [ translatePoint( p, actualPose ) for p in robotGeom[i] ]
@@ -205,12 +208,12 @@ def publish( pub, key, mapMatrix ):
     #print staticPoints
     printWorld( robots.values(), staticPoints, enabled )
 
-    for i in idList: #iterate every robot
+    for i in ids: #iterate every robot
         if i >= 0 and enabled[i]:
             visibleRobots = []
             mapPoints = [] #Posible Obstacles, Every not visible point
             mapPoints.extend( staticPoints )
-            for k in idList:
+            for k in ids:
                 if enabled[k]:
                     if i in key and k in key:
                         if mapMatrix[ key[i] ][ key[k]+1 ] >= 0: # if i can see K
@@ -223,14 +226,14 @@ def publish( pub, key, mapMatrix ):
                         #Fill Posible Points
                         mapPoints.extend( robotActualGeom[k] )
             obstacles = []
-            for k in idList:
+            for k in ids:
                 if k >= 0 and enabled[k]:
                     if i in key and k in key:
                         #Search for Obtacles
                         ratio = float( mapMatrix[ key[i] ][ key[k]+1 ] )/1000
                         obstacles.extend( searchIn( mapPoints, ratio, robots[k].pose ) )
             #publish
-            pub[i].publish( GPSinfo( obstacles, visibleRobots ) )
+            topicList[i].publish( GPSinfo( obstacles, visibleRobots ) )
 
 def initTopics( ids ):
     pubs = {}
@@ -240,13 +243,17 @@ def initTopics( ids ):
 
     return pubs
 
-def setRobotPose( data ):
-        if idList.count( data.id ) == 0:
-            print "[WARN]Unknow ID: "+str(data.id)+", ignoring item, check configuration"
-        else:
-            while len( robotLastPoses[ data.id ] ) <= N:
-                robotLastPoses[ data.id ].insert(0, data)
-            robotLastPoses[ data.id ].pop()
+def setRobotPose( robotPose ):
+    if robotPose.id != 0: # filter ID 0 because of Noise
+        if idList.count( robotPose.id ) == 0 : #Add the new robot
+            topicList[ robotPose.id ] = rospy.Publisher( 'info_' + str( robotPose.id ), GPSinfo, queue_size=10 )
+            robotGeom[ robotPose.id ] = DEFAULT_GEOM
+            robotLastPoses[ robotPose.id ] = []
+            idList.append( robotPose.id )
+            print "New Robot Added ID: ", robotPose.id
+        while len( robotLastPoses[ robotPose.id ] ) <= N:
+            robotLastPoses[ robotPose.id ].insert(0, robotPose)
+        robotLastPoses[ robotPose.id ].pop()
 
 def readMapMatrix():
     f = open ( URL_MAP, 'r' )
@@ -297,12 +304,13 @@ def gps():
 
     rospy.init_node('gps', anonymous=False)
     rospy.on_shutdown( shutDown )
+    global topicList
     topicList = initTopics( idList )
     rospy.Subscriber( "robot_pose" , RobotPose, setRobotPose )
     rate = rospy.Rate( HZ )
     while not rospy.is_shutdown():
 
-        publish( topicList, keys, mapMatrix )
+        publish( list(idList), keys, mapMatrix )
         rate.sleep()
 
 
