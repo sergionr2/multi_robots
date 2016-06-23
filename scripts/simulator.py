@@ -15,26 +15,26 @@ from multi_robots.msg import RobotPose
 
 ID = 6
 
-R = 30 # mm  wheel radius
-L = 100 # Distance between wheels
+R = 0.030 # m  wheel radius
+L = 0.100 # m Distance between wheels
 
 # MAX angular speed
 W_MAX = 5 #rads/s
 W_MIN = 3
 #MAX linear speed
-V_MAX = 5 # rads/s, *R to mm/s
+V_MAX = 5 # rads/s, *R to m/s
 V_MIN = 2.2
 
 KP = 5 #for the angularSpeed
 KI = 0
-D = 400 # if error larger than D use V_MAX
+D = 0.400 # if error larger than D use V_MAX
 KP_V = float(V_MAX)/D #for the LinearSpeed
 KI_V = 0
 acumDistance = 0
 acumAngle = 0
 
 MAX_ANGLE_ERROR = 5 #Degrees
-MAX_POS_ERROR = 20 #mm
+MAX_POS_ERROR = 0.020 #m
 
 #pose initial
 x_0 = 1 # m
@@ -42,13 +42,13 @@ y_0 = 1 # m
 theta_0 = 0
 last_time = 0 # time of the last publication
 
-x_goal = 1000
-y_goal = 1000
+x_goal = 1
+y_goal = 1
 
 def setPose(data):
 
-    x = data.x * 1000 #pass to mm
-    y = data.y * 1000
+    x = data.x
+    y = data.y
     ang = data.theta
 
     d_x = x_goal - x #distance to goal in X
@@ -56,7 +56,7 @@ def setPose(data):
 
     distance_error = math.sqrt( d_x**2 + d_y**2 ) #distance to Goal
     #TODO comenter pour quoi -sin et cos et pas cos et sin
-    print "Distance To Goal: " + str(distance_error) + 'mm\n'
+    print "Distance To Goal: " + str(distance_error) + 'm\n'
     angle_error = 0
     if distance_error > MAX_POS_ERROR :
         dotProduct = d_x*-1*math.sin( ang ) + d_y*math.cos( ang ) #proyection of the distance and angle vectors
@@ -125,12 +125,12 @@ def setPose(data):
     y += v*math.cos( ang )*dt
 
     pub = rospy.Publisher('robot_pose', RobotPose, queue_size=10)
-    pub.publish( RobotPose( ID, Pose2D( x/1000, y/1000, ang ), rospy.Time().now() ) )
+    pub.publish( RobotPose( ID, Pose2D( x, y, ang ), rospy.Time().now() ) )
 
 def setGoal(data):
     global x_goal, y_goal
-    x_goal = data.x * 1000 # the controller works in mm
-    y_goal = data.y * 1000
+    x_goal = data.x
+    y_goal = data.y
 
 def simulator():
 
