@@ -29,13 +29,13 @@ const int leftDir = 13; // DIR B
 
 const int ledPin = 10; // LED
 
-const double R = 30;
-const double L = 100;
+const double R = 30; //mm
+const double L = 100;//mm
 
-const float W_MAX = 5; //rads/s
+const float W_MAX = 6; //rads/s
 const float W_MIN = 3;
 
-const float V_MAX = 5; //rads/s
+const float V_MAX = 4.5; //rads/s
 const float V_MIN = 2.2;
 const int D = 400; // if error larger than D use V_MAX
 
@@ -43,7 +43,9 @@ const float KP = 5;
 const float KP_V = float(V_MAX)/D;
 
 const int MAX_ANGLE_ERROR = 5;
-const int MAX_POS_ERROR = 20;
+const int MAX_POS_ERROR = 20; //mm
+
+const double REDUCTION = 0.10; //10%
 
 int x = 0;
 int y = 0;
@@ -83,7 +85,7 @@ void setVelocity( int pwmPin, int dirPin, double w ){ // pwm_pin, direction_pin,
   byte w_pwm = 0.2154 * w * R + 64.02; 
   if( w_pwm < 65 )
     w_pwm = 0;  
-  Serial.println( w_pwm ); 
+  //Serial.println( w_pwm ); 
   analogWrite( pwmPin, w_pwm );
 }
 void control()
@@ -116,15 +118,11 @@ void control()
   }
   if( angle_error *180/M_PI > -1*MAX_ANGLE_ERROR && angle_error *180/M_PI < MAX_ANGLE_ERROR)
     w_r = 0;
-  double w_l = -1*w_r; 
+  double w_l = -1*w_r;
+   
   double s = KP_V * norm;
-
-  s *= 100 - counterOfLastSetPos*0.01; // 1%
   
-  if ( counterOfLastSetPos < 1.0/0.01)
-    counterOfLastSetPos++;
-  
-   if( s > V_MAX )
+  if( s > V_MAX )
     s = V_MAX;
   else{
     if( s < -1*V_MAX )
@@ -137,9 +135,16 @@ void control()
           s = -1*V_MIN;
       }
     }
-  }
+  }    
   w_r += s;
   w_l += s; 
+  
+  w_r *= 1 - counterOfLastSetPos*REDUCTION;
+  w_l *= 1 - counterOfLastSetPos*REDUCTION;
+  
+  if ( counterOfLastSetPos < 1/REDUCTION)
+    counterOfLastSetPos++;
+  
   if( norm < MAX_POS_ERROR && norm > -1*MAX_POS_ERROR ){
     w_r = 0;
     w_l = 0;
