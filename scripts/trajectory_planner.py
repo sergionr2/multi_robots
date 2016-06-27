@@ -8,8 +8,8 @@ from std_msgs.msg import *
 from visualization_msgs.msg import *
 
 HZ = 0.066 #frecuence of publish reference in hz
-ID = 6
-FRAME = 'Local_'+str(ID)
+ID = 0
+FRAME = "Local_1"#
 
 def translatePoint( point3D, pose2D ):#rotation en Z
     x = point3D.x
@@ -112,6 +112,7 @@ def printData( info ):
         m.text = "ID: " + str( r.id ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) )
         cont += 1
         markers.append( m )
+
     pub.publish( markers )
 
 def getInfo( info ):
@@ -137,9 +138,13 @@ def setGoal( cont ):
     rospy.loginfo( "writing goal %s + %s + %s\n",x[cont%4],y[cont%4], 0 )
     return Pose2D( x[cont%4],y[cont%4],0 )
 
-def planer():
+def planner():
+    #init params
+    rospy.init_node('Trajectory_Planner', anonymous=False)
+    global ID, FRAME
+    ID = rospy.get_param('~id',1)
+    FRAME = 'Local_'+str(ID)
     pubGoal = rospy.Publisher('goal_'+str(ID), Pose2D, queue_size=10)
-    rospy.init_node('Trajectory_Planer_'+str(ID), anonymous=False)
     rate = rospy.Rate( HZ ) # 10hz
     rospy.Subscriber( "info_"+str(ID) , GPSinfo, getInfo )
     cont = 0
@@ -151,6 +156,6 @@ def planer():
 
 if __name__ == '__main__':
     try:
-        planer()
+        planner()
     except rospy.ROSInterruptException:
         pass

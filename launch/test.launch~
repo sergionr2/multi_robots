@@ -1,0 +1,26 @@
+<launch>
+
+  <node pkg="multi_robots" name="Corrector" type="corrector.py"/>
+
+  <param name="objects" value="$(find multi_robots)/GPSconfig/objects.txt" />
+  <param name="map" value="$(find multi_robots)/GPSconfig/map.txt" />
+  <param name="default_geom" value="$(find multi_robots)/robotGeometry/default.txt" />
+  <node pkg="multi_robots" name="Gps" type="gps.py"/>
+
+  <group>
+    <arg name="n" default="1" />
+    <param name="~id" type="int" value="$(arg n)" />
+    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py"/>
+    <param name="~x" type="int" value="1" />
+    <param name="~y" type="int" value="1" />
+    <node pkg="multi_robots" name="Sim_$(arg n)" type="sim_unicycle.py"/>
+  </group>
+
+  <group>
+    <arg name="n" default="6" />
+    <param name="~id" type="int" value="$(arg n)" />
+    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py"/>
+    <node pkg="multi_robots" name="Sim_$(arg n)" type="sim_unicycle.py"/>
+  </group>
+
+</launch>

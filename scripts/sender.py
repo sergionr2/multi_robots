@@ -56,10 +56,16 @@ def sendPose(data):
 def shutDown():
     ser.close()
 
-def sender(robotID, port, baudRate):
+def sender():
 
-    rospy.init_node('Sender_'+ str( robotID ), anonymous=False)
+    rospy.init_node('Sender' , anonymous=False)
     rospy.on_shutdown( shutDown )
+
+    port = rospy.get_param('~port', '/dev/ttyUSB0' )
+    baudRate = rospy.get_param('~baudRate', 9600 )
+    robotID = rospy.get_param('~id', 1 )
+
+
     global ser
     try:
         ser = serial.Serial( port=port, baudrate=baudRate, bytesize=8, parity='N', stopbits=1, timeout=6, xonxoff=0, rtscts=0 )
@@ -72,11 +78,7 @@ def sender(robotID, port, baudRate):
     rospy.spin()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print("usage: sender.py ID Port BaudRate --default--> 01 /dev/ttyUSB0 9600 ")
-	sender( 06, '/dev/ttyUSB0', 9600)
-    else:
-        if len(sys.argv) < 4:
-            sender( int(sys.argv[1]), sys.argv[2], 9600 )
-        else:
-            sender( int(sys.argv[1]), sys.argv[2], int(sys.argv[3]) )
+    try:
+        sender()
+    except rospy.ROSInterruptException:
+        pass

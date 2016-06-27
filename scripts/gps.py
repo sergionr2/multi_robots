@@ -14,14 +14,14 @@ from visualization_msgs.msg import *
 MAXTIME = 0.5 #seconds, time to unable if not visible
 N = 20 #number of points to calcul velocity
 HZ = 30 #frecuence of publish 30hz
-URL_OBJS = '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/objects.txt'
-URL_MAP = '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/map.txt'
-GEOM ='0.0 , 0.0'
+URL_OBJS = 0
+URL_MAP = 0
+GEOM = 0
 INIT_X = -1
 INIT_Y = -1
 INIT_THETA = math.pi /4
 FRAME = 'World'
-DEFAULT_GEOM = [ Point( 0, 0, 0 ) ]
+DEFAULT_GEOM = 0
 
 robotGeom = {} # int : Point[]
 robotLastPoses = {} # int : RobotPose[N]
@@ -102,7 +102,7 @@ def searchIn( pointList, ratio, pose2D ):
     return points
 
 def printWorld( robots, obstacles, enableds ):
-    pub = rospy.Publisher( 'World', MarkerArray, queue_size=10 )
+    pub = rospy.Publisher( 'world', MarkerArray, queue_size=10 )
     markers = []
     cont = 0
     m = Marker()
@@ -247,12 +247,13 @@ def setRobotPose( robotPose ):
     if robotPose.id != 0: # filter ID 0 because of Noise
         if idList.count( robotPose.id ) == 0 : #Add the new robot
             topicList[ robotPose.id ] = rospy.Publisher( 'info_' + str( robotPose.id ), GPSinfo, queue_size=10 )
-            robotGeom[ robotPose.id ] = DEFAULT_GEOM
+            if( not robotGeom.has_key( robotPose.id ) ):
+                robotGeom[ robotPose.id ] = getPolygon( DEFAULT_GEOM )
             robotLastPoses[ robotPose.id ] = []
             idList.append( robotPose.id )
             print "New Robot Added ID: ", robotPose.id
         while len( robotLastPoses[ robotPose.id ] ) <= N:
-            robotLastPoses[ robotPose.id ].insert(0, robotPose)
+            robotLastPoses[ robotPose.id ].insert(0, robotPose )
         robotLastPoses[ robotPose.id ].pop()
 
 def readMapMatrix():
@@ -290,19 +291,26 @@ def shutDown():
     print("GPS end")
 
 def gps():
+    rospy.init_node('Gps', anonymous=False)
+
+    global URL_OBJS, URL_MAP, DEFAULT_GEOM
+    #init params
+    URL_OBJS = rospy.get_param('objects', '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/objects.txt' )
+    URL_MAP = rospy.get_param('map', '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/map.txt' )
+    DEFAULT_GEOM = rospy.get_param('default_geom', '/home/multi-robots/catkin_ws/src/multi_robots/robotGeom/default.txt' )
+
     try: # read Objects file
         global idList, robotGeom, robotLastPoses
         idList, robotGeom, robotLastPoses = readRobotGeom()
     except Exception as e:
         print "Invalid or inexistent file 'objects', GPS cannot start \n Verify file URL, check README"
-        raise rospy.ROSInterruptException
+        #raise rospy.ROSInterruptException
     try: # read Map file
         keys, mapMatrix = readMapMatrix()
     except Exception as e:
         print "Invalid or inexistent file 'map', GPS cannot start \n Verify file URL, check README"
-        raise rospy.ROSInterruptException
+        #raise rospy.ROSInterruptException
 
-    rospy.init_node('gps', anonymous=False)
     rospy.on_shutdown( shutDown )
     global topicList
     topicList = initTopics( idList )

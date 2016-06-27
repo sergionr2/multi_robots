@@ -9,11 +9,10 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Pose2D
 from multi_robots.msg import RobotPose
 
-ID = 6
 
 #MAX linear speed
 V_MAX = 0.200 #  m/s
-V_MIN = 0 
+V_MIN = 0
 # Controllers gains
 D = 0.400 # if error larger than D use V_MAX
 KP_V = float(V_MAX)/D #for the LinearSpeed
@@ -23,6 +22,7 @@ acumDistance = 0
 
 MAX_POS_ERROR = 0.001 #m
 
+ID = 1
 #pose initial
 x_0 = 1 # m
 y_0 = 1 # m
@@ -78,15 +78,19 @@ def setGoal(data):
 
 def particle():
 
-    global last_time
-    rospy.init_node('sim_'+ str(ID) , anonymous=False)
-    rospy.Subscriber( "goal_"+str(ID) , Pose2D, setGoal )
-    rospy.Subscriber( "pose_"+str(ID) , Pose2D, setPose )
+    global ID, last_time, x_0, y_0
+    #init params
+    rospy.init_node('Sim' , anonymous=False)
+    ID = rospy.get_param('~id', 1 )
+    x_0 = rospy.get_param('~x', 0 )
+    y_0 = rospy.get_param('~y', 0 )
+
     last_time = rospy.Time().now()
     init = RobotPose( ID, Pose2D( x_0, y_0, 0 ), rospy.Time().now() )
     pub = rospy.Publisher( 'robot_pose', RobotPose, queue_size=10, latch=True)
     pub.publish( init )
-    print init
+    rospy.Subscriber( "goal_"+str(ID) , Pose2D, setGoal )
+    rospy.Subscriber( "pose_"+str(ID) , Pose2D, setPose )
     rospy.spin()
 
 if __name__ == '__main__':
