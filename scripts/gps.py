@@ -16,12 +16,12 @@ N = 20 #number of points to calcul velocity
 HZ = 30 #frecuence of publish 30hz
 URL_OBJS = 0
 URL_MAP = 0
-GEOM = 0
+
 INIT_X = -1
 INIT_Y = -1
 INIT_THETA = math.pi /4
 FRAME = 'World'
-DEFAULT_GEOM = 0
+DEFAULT_GEOM = '8'
 
 robotGeom = {} # int : Point[]
 robotLastPoses = {} # int : RobotPose[N]
@@ -232,6 +232,8 @@ def publish( ids, key, mapMatrix ):
                         #Search for Obtacles
                         ratio = float( mapMatrix[ key[i] ][ key[k]+1 ] )/1000
                         obstacles.extend( searchIn( mapPoints, ratio, robots[k].pose ) )
+            if not( i in key ):
+                visibleRobots.append( robots[i] ) # if not in map
             #publish
             topicList[i].publish( GPSinfo( obstacles, visibleRobots ) )
 
@@ -268,7 +270,7 @@ def getPolygon( url ):
         f = open ( url, 'r' )
         points = [ map( int, line.split(',') ) for line in f ] #read file
     except Exception as e:
-        print "Invalid or inexistent file "+ url +", using default geometry: "+ GEOM +'\n'
+        print "Invalid or inexistent file "+ url +", using default geometry: (0,0)\n"
         points = [ [ 0,0 ] ]
     return [ ( Point( float(point[0])/1000, float(point[1])/1000, 0 ) ) for point in points ] #convert in m
 
@@ -297,7 +299,7 @@ def gps():
     #init params
     URL_OBJS = rospy.get_param('objects', '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/objects.txt' )
     URL_MAP = rospy.get_param('map', '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/map.txt' )
-    DEFAULT_GEOM = rospy.get_param('default_geom', '/home/multi-robots/catkin_ws/src/multi_robots/robotGeom/default.txt' )
+    DEFAULT_GEOM = rospy.get_param('default_geom', '/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/default.txt' )
 
     try: # read Objects file
         global idList, robotGeom, robotLastPoses

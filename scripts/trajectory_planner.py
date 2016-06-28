@@ -148,6 +148,7 @@ def planner():
     rate = rospy.Rate( HZ ) # 10hz
     rospy.Subscriber( "info_"+str(ID) , GPSinfo, getInfo )
     cont = 0
+    cont += rospy.get_param('~behavior',0)
     while not rospy.is_shutdown():
 
         pubGoal.publish( setGoal( cont ) )
