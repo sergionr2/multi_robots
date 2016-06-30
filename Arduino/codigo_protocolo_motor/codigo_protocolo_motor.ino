@@ -62,7 +62,7 @@ void loop(){
       Serial.println("ACTION CHECKED!!!");
     }else if((income >= 'A' && income <= 'J') && check_start == 1 && check_ID == 1){
       power = income;
-      power = (power - 'A')*25 + 25;
+      power = (power - 'A')*5 + 25;
       Serial.println("POWER CHECKED!!!");
     }else if(income == END_CHAR){
       check_start = 0;

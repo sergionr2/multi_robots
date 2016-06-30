@@ -25,13 +25,13 @@ def setMaxMin( x, Max, Min ): # set x in the ]min,max[ interval
         x = Min + 1
     return x
 
-def sendGoal(data):
+def sendGoal(goal):
     #convertion with 'scale'
     #limits 16bits
-    x = setMaxMin( int( data.x * scale ) , 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    x = setMaxMin( int( goal.x * scale ) , 2**(N_BITS-1)-1, -2**(N_BITS-1) )
     #works for signed variables
-    y = setMaxMin(  int( data.y * scale ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
-    theta = setMaxMin(  int( data.theta * scaleAngle ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    y = setMaxMin(  int( goal.y * scale ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    theta = setMaxMin(  int( goal.theta * scaleAngle ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
 
     ser.write( '@G' ) #init message
     ser.write( struct.pack('hhh', x, y, theta) ) # sending int16 int16 int16
@@ -39,14 +39,14 @@ def sendGoal(data):
     rospy.loginfo( "writing goal %s + %s + %s\n",str(x),str(y), str(theta) )
 
 
-def sendPose(data):
+def sendPose(pose):
 
     #convertion with 'scale'
     #limits 16bits
-    x = setMaxMin( int( data.x * scale ) , 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    x = setMaxMin( int( pose.x * scale ) , 2**(N_BITS-1)-1, -2**(N_BITS-1) )
     #works for signed variables
-    y = setMaxMin(  int( data.y * scale ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
-    theta = setMaxMin(  int( data.theta * scaleAngle ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    y = setMaxMin(  int( pose.y * scale ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
+    theta = setMaxMin(  int( pose.theta * scaleAngle ), 2**(N_BITS-1)-1, -2**(N_BITS-1) )
 
     ser.write( '@P' ) #init message
     ser.write( struct.pack('hhh', x, y, theta) ) # sending int16 int16 int16

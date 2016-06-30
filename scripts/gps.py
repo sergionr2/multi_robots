@@ -28,7 +28,7 @@ robotLastPoses = {} # int : RobotPose[N]
 idList = [] # IDs
 topicList = {} # int : pub
 
-#TODO srv set Noise
+#TODO parameter
 A = 0 # Noise Amplitud m
 
 def setEnableds(): #disabled if pose is older that MAXTIME

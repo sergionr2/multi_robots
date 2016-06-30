@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-
+## THIS IS NOT PART OF THE MAIN APLICATION.
+# IT IS JUST FOR FUNCTION AND SINTAX TESTS
 
 import rospy
 from std_msgs.msg import String
