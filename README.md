@@ -1,4 +1,6 @@
-# multi_robots
-Multi robot plataform in ROS for cooperating control
+# Multi robot plataform in ROS for experimentation in cooperating control
 
-I like :turtle: ROS
+This *ROS* Package provided some tools to experiment with a simple environment of multiple mobile robots. It helps you code and debug your cooperative control algorithms with a modular and distrubited architecture.
+
+## Resources
+* [Wiki](https://github.com/sergionr2/multi_robots/wiki)
