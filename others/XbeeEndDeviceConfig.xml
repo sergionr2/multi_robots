@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<data>
+  <profile>
+    <description_file>XB24-B_ZigBee_1220.xml</description_file>
+    <settings>
+      <setting command="ID">10</setting>
+      <setting command="DH">13A200</setting>
+      <setting command="DL">408C595E</setting>
+      <setting command="BH">0</setting>
+      <setting command="SC">1FFE</setting>
+      <setting command="SD">3</setting>
+      <setting command="JN">1</setting>
+      <setting command="NJ">FF</setting>
+      <setting command="NI">PC1</setting>
+      <setting command="DD">0</setting>
+      <setting command="NT">3C</setting>
+      <setting command="AR">FF</setting>
+      <setting command="PL">4</setting>
+      <setting command="PM">1</setting>
+      <setting command="BD">3</setting>
+      <setting command="NB">0</setting>
+      <setting command="RO">3</setting>
+      <setting command="D7">1</setting>
+      <setting command="D6">0</setting>
+      <setting command="SM">0</setting>
+      <setting command="ST">1388</setting>
+      <setting command="SP">32</setting>
+      <setting command="SN">1</setting>
+      <setting command="D0">1</setting>
+      <setting command="D1">0</setting>
+      <setting command="D2">0</setting>
+      <setting command="D3">0</setting>
+      <setting command="D4">0</setting>
+      <setting command="D5">1</setting>
+      <setting command="P0">1</setting>
+      <setting command="P1">0</setting>
+      <setting command="P2">0</setting>
+      <setting command="RP">28</setting>
+      <setting command="PR">1FFF</setting>
+      <setting command="CT">64</setting>
+      <setting command="GT">3E8</setting>
+      <setting command="CC">2B</setting>
+    </settings>
+  </profile>
+</data>
