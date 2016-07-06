@@ -13,36 +13,17 @@
     <param name="~behavior" type="int" value="1" />
     <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py"/>
     <param name="~port" value="/dev/ttyUSB1" />
-    <node pkg="multi_robots" name="Sim_$(arg n)" type="sender.py"/>
+    <node pkg="multi_robots" name="System_$(arg n)" type="sender.py"/>
   </group>
 
   <group>
     <arg name="n" default="6" />
     <param name="~id" type="int" value="$(arg n)" />
-    <param name="~behavior" type="int" value="3" />
-    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py"/>
-    <param name="~port" value="/dev/ttyUSB0" />
-    <node pkg="multi_robots" name="Sim_$(arg n)" type="sender.py"/>
-  </group>
-
-  <group>
-    <arg name="n" default="1" />
-    <param name="~id" type="int" value="$(arg n)" />
-    <param name="~behavior" type="int" value="0" />
-    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py"/>
-    <param name="~x" type="int" value="1" />
-    <param name="~y" type="int" value="1" />
-    <node pkg="multi_robots" name="Sim_$(arg n)" type="sim_particle.py"/>
-  </group>
-
-  <group>
-    <arg name="n" default="2" />
-    <param name="~id" type="int" value="$(arg n)" />
     <param name="~behavior" type="int" value="2" />
     <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py"/>
     <param name="~x" type="int" value="1" />
     <param name="~y" type="int" value="1" />
-    <node pkg="multi_robots" name="Sim_$(arg n)" type="sim_unicycle.py"/>
+    <node pkg="multi_robots" name="System_$(arg n)" type="sim_unicycle.py"/>
   </group>
 
 </launch>

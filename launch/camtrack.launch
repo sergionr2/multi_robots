@@ -1,5 +1,5 @@
 <launch>
-  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+  <node name="camera" pkg="usb_cam" type="usb_cam_node" output="screen" >
     <param name="video_device" value="/dev/video0" />
     <param name="image_width" value="1280" />
     <param name="image_height" value="720" />
@@ -20,11 +20,11 @@
     <arg name="marker_size" default="5.5" />
     <arg name="max_new_marker_error" default="0.08" />
     <arg name="max_track_error" default="0.2" />
-    <arg name="cam_image_topic" default="/usb_cam/image_raw" />
-    <arg name="cam_info_topic" default="/usb_cam/camera_info" />	
+    <arg name="cam_image_topic" default="/camera/image_raw" />
+    <arg name="cam_info_topic" default="/camera/camera_info" />	
     <arg name="output_frame" default="usb_cam" />
     <arg name="max_frequency" default="60" />
 
-    <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg max_frequency) " />
+    <node name="Alvar_tracking" pkg="ar_track_alvar" type="individualMarkersNoKinect" respawn="false" output="screen" args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame) $(arg max_frequency) " />
 
 </launch>
