@@ -13,7 +13,7 @@
     <param name="brightness" value="50"/>
     <param name="saturation" value="100"/>
     <param name="sharpness" value="200"/>
-    <param name="camera_info_url" value="file:///home/multi-robots/catkin_ws/src/multi_robots/ost.yaml" />
+    <param name="camera_info_url" value="file://$(find multi_robots)/ost.yaml" />
     <param name="sharpness" value="200"/>
   </node>
 
@@ -21,7 +21,7 @@
     <arg name="max_new_marker_error" default="0.08" />
     <arg name="max_track_error" default="0.2" />
     <arg name="cam_image_topic" default="/camera/image_raw" />
-    <arg name="cam_info_topic" default="/camera/camera_info" />	
+    <arg name="cam_info_topic" default="/camera/camera_info" />
     <arg name="output_frame" default="usb_cam" />
     <arg name="max_frequency" default="60" />
 

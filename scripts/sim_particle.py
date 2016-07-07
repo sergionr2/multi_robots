@@ -22,19 +22,13 @@ acumDistance = 0
 
 MAX_POS_ERROR = 0.001 #m
 
-ID = 1
-#pose initial
-x_0 = 1 # m
-y_0 = 1 # m
-last_time = 0 # time of the last publication
-
 x_goal = 1
 y_goal = 1
 
-def setPose(data):
+def setPose(pose):
 
-    x = data.x
-    y = data.y
+    x = pose.x
+    y = pose.y
 
     d_x = x_goal - x #distance to goal in X
     d_y = y_goal - y #distance to goal in Y
@@ -71,16 +65,15 @@ def setPose(data):
     pub = rospy.Publisher('robot_pose', RobotPose, queue_size=10)
     pub.publish( RobotPose( ID, Pose2D( x, y, 0 ), rospy.Time().now() ) )
 
-def setGoal(data):
+def setGoal(goal):
     global x_goal, y_goal
-    x_goal = data.x
-    y_goal = data.y
+    x_goal = goal.x
+    y_goal = goal.y
 
 def particle():
 
-    global ID, last_time, x_0, y_0
     #init params
-    rospy.init_node('Sim' , anonymous=False)
+    rospy.init_node('System' , anonymous=False)
     ID = rospy.get_param('~id', 1 )
     x_0 = rospy.get_param('~x', 0 )
     y_0 = rospy.get_param('~y', 0 )

@@ -34,30 +34,28 @@ acumAngle = 0
 MAX_ANGLE_ERROR = 5 #Degrees
 MAX_POS_ERROR = 0.020 #m
 
-ID = 1
-#pose initial
-x_0 = 1 # m
-y_0 = 1 # m
-theta_0 = 0
-last_time = 0 # time of the last publication
-
+#initial goal
 x_goal = 1
 y_goal = 1
 
-def setPose(data):
+def setPose( pose ):
 
-    x = data.x
-    y = data.y
-    ang = data.theta
+    x = pose.x
+    y = pose.y
+    ang = pose.theta
 
     d_x = x_goal - x #distance to goal in X
     d_y = y_goal - y #distance to goal in Y
 
     distance_error = math.sqrt( d_x**2 + d_y**2 ) #distance to Goal
+
     #TODO comenter pour quoi -sin et cos et pas cos et sin
+
     print "Distance To Goal: " + str(distance_error) + 'm\n'
     angle_error = 0
     if distance_error > MAX_POS_ERROR :
+        # The projection is NOT d_x*math.cos( ang ) + d_y*math.sin( ang )
+        # beacause the robot frame is rotated 90° in z compared to the model used
         dotProduct = d_x*-1*math.sin( ang ) + d_y*math.cos( ang ) #proyection of the distance and angle vectors
         angle_error = math.acos( dotProduct/distance_error ) # Angle between the vector from 0 to pi
         # To know the turning direction (if the error is negative)
@@ -126,16 +124,16 @@ def setPose(data):
     pub = rospy.Publisher('robot_pose', RobotPose, queue_size=10)
     pub.publish( RobotPose( ID, Pose2D( x, y, ang ), rospy.Time().now() ) )
 
-def setGoal(data):
+def setGoal( goal ):
     global x_goal, y_goal
-    x_goal = data.x
-    y_goal = data.y
+    x_goal = goal.x
+    y_goal = goal.y
+    # Do nothing with goal.theta
 
 def unicycle():
 
-    global ID, last_time, x_0, y_0, theta_0
     #init params
-    rospy.init_node('Sim' , anonymous=False)
+    rospy.init_node('Sistem' , anonymous=False)
     ID = rospy.get_param('~id', 1 )
     x_0 = rospy.get_param('~x', 0 )
     y_0 = rospy.get_param('~y', 0 )

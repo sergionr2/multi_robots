@@ -1,12 +1,13 @@
 This file describes the "robotGeometry.txt" files
 --------------
-It is a list of 2D points (in mm) separeted with commas of points of the geometry, each point is supposed to be connected by a line with the next one. All points must be placed from the 0,0. 
+It is a list of 2D points (in mm) separeted with commas of points of the geometry,
+each point is supposed to be connected by a line with the next one. All points must be placed from the 0,0. 
 
     8__1
     /  \         ^ y
 6 _/7..2\_ 3     |
  |________|      |
-5	    4    .---> x
+5          4     .---> x
 
 if the origin is between the two points and each space is 1mm
 
@@ -21,7 +22,7 @@ example:
 -1,2
 1,2
 ------------
-A simple square  
+A simple square
 
               ^ y
   4__1        |
@@ -36,4 +37,3 @@ example:
 -20,0
 0,0
 20,0
-

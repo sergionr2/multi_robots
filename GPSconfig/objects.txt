@@ -2,4 +2,4 @@
 5,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/robot1.txt
 6,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/robot1.txt
 2,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/thimioRobot.txt
-4,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/logiTechBox.txt
+4,/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/littleBox.txt

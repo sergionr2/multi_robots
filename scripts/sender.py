@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+# this ROS NODE send via the serial port, the goal and position of the robot
+# the protocol is one byte for the start char '@'
+#               one bit for the identifier char 'G' for goal 'P'  for position
+#               two bits of each of: 'x', 'y' and 'theta'
+#               one bit for an end char '.'
+# for a total of 9 bytes each message.
+# it sends 'x' and 'y' in mm and 'theta' in degrees
 
 import sys
 import rospy
@@ -25,7 +32,7 @@ def setMaxMin( x, Max, Min ): # set x in the ]min,max[ interval
         x = Min + 1
     return x
 
-def sendGoal(goal):
+def sendGoal( goal ):
     #convertion with 'scale'
     #limits 16bits
     x = setMaxMin( int( goal.x * scale ) , 2**(N_BITS-1)-1, -2**(N_BITS-1) )
@@ -60,11 +67,10 @@ def sender():
 
     rospy.init_node('Sender' , anonymous=False)
     rospy.on_shutdown( shutDown )
-
+    # init parameters
     port = rospy.get_param('~port', '/dev/ttyUSB0' )
     baudRate = rospy.get_param('~baudRate', 9600 )
     robotID = rospy.get_param('~id', 1 )
-
 
     global ser
     try:
@@ -73,6 +79,7 @@ def sender():
         print("Unable to set communication, verify PORT")
         exit();
     print("Talking in " + port + " at " + str(baudRate) + "\n")
+
     rospy.Subscriber( "goal_" + str( robotID ) , Pose2D, sendGoal )
     rospy.Subscriber( "pose_" + str( robotID ) , Pose2D, sendPose )
     rospy.spin()
