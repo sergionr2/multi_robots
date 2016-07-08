@@ -12,8 +12,12 @@ focus = rospy.get_param("/usb_cam/focus")
 
 def publisher():
     # test dictionaty parameters
-
-    rospy.spin()
+    #init params
+    rospy.init_node('Test' , anonymous=False)
+    dic = rospy.get_param('geom', 1 )
+    print dic
+    pub = rospy.Publisher( 'robot_pose', RobotPose, queue_size=10, latch=True)
+    pub.publish( init )
 
 if __name__ == '__main__':
     try:
