@@ -1,8 +1,11 @@
 <launch>
 
-  <param name="geom/-1/" value="aqui" />
-  <param name="geom/-1/x" value="0" />
-  <param name="geom/1/" value="aqui2" />
+  <param name="robot/-1/geom" value="$(find multi_robots)/robotGeometry/littleBox.txt" />
+  <param name="robot/-1/x" value="0" />
+  <param name="robot/-1/y" value="0" />
+  <param name="robot/-1/theta" value="0" />
+
+  <param name="robot/1/geom" value="aqui2" />
 
   <node pkg="multi_robots" name="test" type="test.py"/>
 

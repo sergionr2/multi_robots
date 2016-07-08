@@ -21,9 +21,12 @@ KI_V = 0
 acumDistance = 0
 
 MAX_POS_ERROR = 0.001 #m
-
+#inital goal
 x_goal = 1
 y_goal = 1
+
+#time of last position
+last_time = 0
 
 def setPose(pose):
 
@@ -61,7 +64,7 @@ def setPose(pose):
     ang = math.atan2( d_y, d_x );
     x += vel*math.cos( ang )*dt
     y += vel*math.sin( ang )*dt
-
+    ID = rospy.get_param('~id', 1 )
     pub = rospy.Publisher('robot_pose', RobotPose, queue_size=10)
     pub.publish( RobotPose( ID, Pose2D( x, y, 0 ), rospy.Time().now() ) )
 
@@ -77,7 +80,7 @@ def particle():
     ID = rospy.get_param('~id', 1 )
     x_0 = rospy.get_param('~x', 0 )
     y_0 = rospy.get_param('~y', 0 )
-
+    global last_time
     last_time = rospy.Time().now()
     init = RobotPose( ID, Pose2D( x_0, y_0, 0 ), rospy.Time().now() )
     pub = rospy.Publisher( 'robot_pose', RobotPose, queue_size=10, latch=True)

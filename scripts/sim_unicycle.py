@@ -37,6 +37,10 @@ MAX_POS_ERROR = 0.020 #m
 #initial goal
 x_goal = 1
 y_goal = 1
+#time of last position
+last_time = 0
+
+ID = 0
 
 def setPose( pose ):
 
@@ -49,13 +53,11 @@ def setPose( pose ):
 
     distance_error = math.sqrt( d_x**2 + d_y**2 ) #distance to Goal
 
-    #TODO comenter pour quoi -sin et cos et pas cos et sin
-
     print "Distance To Goal: " + str(distance_error) + 'm\n'
     angle_error = 0
     if distance_error > MAX_POS_ERROR :
         # The projection is NOT d_x*math.cos( ang ) + d_y*math.sin( ang )
-        # beacause the robot frame is rotated 90° in z compared to the model used
+        # beacause the robot frame is rotated pi/2 in z compared to the model used
         dotProduct = d_x*-1*math.sin( ang ) + d_y*math.cos( ang ) #proyection of the distance and angle vectors
         angle_error = math.acos( dotProduct/distance_error ) # Angle between the vector from 0 to pi
         # To know the turning direction (if the error is negative)
@@ -117,10 +119,11 @@ def setPose( pose ):
     elif( ang < -1*math.pi ):
         ang += 2*math.pi
 
-    #TODO meme commentaire
+    # remember the robot frame is rotated pi/2 in z compared to the model used
     x += -1*v*math.sin( ang )*dt
     y += v*math.cos( ang )*dt
 
+    ID = rospy.get_param('~id', 1 )
     pub = rospy.Publisher('robot_pose', RobotPose, queue_size=10)
     pub.publish( RobotPose( ID, Pose2D( x, y, ang ), rospy.Time().now() ) )
 
@@ -134,11 +137,12 @@ def unicycle():
 
     #init params
     rospy.init_node('Sistem' , anonymous=False)
+    global ID
     ID = rospy.get_param('~id', 1 )
     x_0 = rospy.get_param('~x', 0 )
     y_0 = rospy.get_param('~y', 0 )
     theta_0 = rospy.get_param('~theta', 0 )
-
+    global last_time
     last_time = rospy.Time().now()
     init = RobotPose( ID, Pose2D( x_0, y_0, theta_0 ), rospy.Time().now() )
     pub = rospy.Publisher( 'robot_pose', RobotPose, queue_size=10, latch=True)

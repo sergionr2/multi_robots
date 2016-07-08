@@ -69,16 +69,15 @@ def sender():
     rospy.on_shutdown( shutDown )
     # init parameters
     port = rospy.get_param('~port', '/dev/ttyUSB0' )
-    baudRate = rospy.get_param('~baudRate', 9600 )
     robotID = rospy.get_param('~id', 1 )
 
     global ser
     try:
-        ser = serial.Serial( port=port, baudrate=baudRate, bytesize=8, parity='N', stopbits=1, timeout=6, xonxoff=0, rtscts=0 )
+        ser = serial.Serial( port=port, baudrate=9600, bytesize=8, parity='N', stopbits=1, timeout=6, xonxoff=0, rtscts=0 )
     except serial.SerialException:
         print("Unable to set communication, verify PORT")
         exit();
-    print("Talking in " + port + " at " + str(baudRate) + "\n")
+    print("Talking in " + port + " at " + '9600' + "\n")
 
     rospy.Subscriber( "goal_" + str( robotID ) , Pose2D, sendGoal )
     rospy.Subscriber( "pose_" + str( robotID ) , Pose2D, sendPose )
