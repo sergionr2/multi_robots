@@ -28,7 +28,6 @@ robotLastPoses = {} # int : RobotPose[N]
 idList = [] # IDs
 topicList = {} # int : pub
 
-#TODO parameter
 A = 0 # Noise Amplitud m
 
 def setEnableds(): #disabled if pose is older that MAXTIME
@@ -276,17 +275,23 @@ def getPolygon( url ):
 
 
 def readRobotGeom():
-    f = open ( URL_OBJS, 'r')
-    l = [ map( str, line.split(',') ) for line in f ]
-    geoms = dict( ( int(i[0]), getPolygon(i[1].rstrip('\n')) ) for i in l )
-    ids = [ int(i[0]) for i in l ]
-    lastPoses = dict( ( i, [] ) for i in ids ) #init robotLastPoses
-    for row in l:
-        if( int(row[0]) < 0 ):
-            r = RobotPose()
-            r.id = int(row[0])
-            r.pose = Pose2D( float( row[2]),float(row[3]),float( row[4].rstrip('\n') ) )
-            lastPoses[ r.id ].insert(0,r)
+    geomDictionary = rospy.get_param('~robot' )
+    ids = []
+    for i in geomDictionary.keys():
+        ids.append( int(i) )
+    geoms = {}
+    lastPoses = {}
+    for i in ids:
+        geoms[ i ] = getPolygon( geomDictionary[ str(i) ][ 'geom' ] )
+        lastPoses[ i ] = []
+        if i < 0:
+            robot = RobotPose()
+            robot.id = i
+            robot.pose.x = geomDictionary[ str(i) ]['x']
+            robot.pose.y = geomDictionary[ str(i) ]['y']
+            robot.pose.theta = geomDictionary[ str(i) ]['theta']
+            # robot time is 0 par default
+            lastPoses[ robot.id ].append( robot )
     return ids, geoms, lastPoses
 
 def shutDown():
@@ -297,15 +302,15 @@ def gps():
 
     global URL_OBJS, URL_MAP, DEFAULT_GEOM
     #init params
-    URL_OBJS = rospy.get_param('objects', '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/objects.txt' )
-    URL_MAP = rospy.get_param('map', '/home/multi-robots/catkin_ws/src/multi_robots/GPSconfig/map.txt' )
-    DEFAULT_GEOM = rospy.get_param('default_geom', '/home/multi-robots/catkin_ws/src/multi_robots/robotGeometry/default.txt' )
+    URL_OBJS = rospy.get_param('~objects', '/home/nicolas/catkin_ws/src/multi_robots/GPSconfig/objects.txt' )
+    URL_MAP = rospy.get_param('~map', '/home/nicolas/catkin_ws/src/multi_robots/GPSconfig/map.txt' )
+    DEFAULT_GEOM = rospy.get_param('~default_geom', '/home/nicolas/catkin_ws/src/multi_robots/robotGeometry/default.txt' )
 
-    try: # read Objects file
-        global idList, robotGeom, robotLastPoses
-        idList, robotGeom, robotLastPoses = readRobotGeom()
-    except Exception as e:
-        print "Invalid or inexistent file 'objects', GPS cannot start \n Verify file URL, check README"
+    # read Objects file
+    global idList, robotGeom, robotLastPoses
+    idList, robotGeom, robotLastPoses = readRobotGeom()
+
+    #print "Invalid or inexistent file 'objects', GPS cannot start \n Verify file URL, check README"
         #raise rospy.ROSInterruptException
     try: # read Map file
         keys, mapMatrix = readMapMatrix()
