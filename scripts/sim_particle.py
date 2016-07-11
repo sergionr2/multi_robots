@@ -8,7 +8,8 @@ import math
 from std_msgs.msg import String
 from geometry_msgs.msg import Pose2D
 from multi_robots.msg import RobotPose
-
+#set Start position if lost
+LOST_TIME = 2 #check if lost every 2 seconds
 
 #MAX linear speed
 V_MAX = 0.200 #  m/s
@@ -87,7 +88,14 @@ def particle():
     pub.publish( init )
     rospy.Subscriber( "goal_"+str(ID) , Pose2D, setGoal )
     rospy.Subscriber( "pose_"+str(ID) , Pose2D, setPose )
-    rospy.spin()
+    rate = rospy.Rate( 1.0/LOST_TIME )
+    while not rospy.is_shutdown():
+        print rate
+        if rospy.Time().now() - last_time > rospy.Duration( LOST_TIME ):
+            last_time = rospy.Time().now()
+            pub.publish( RobotPose( ID, Pose2D( x_0, y_0, 0 ), rospy.Time().now() ) )
+        rate.sleep()
+
 
 if __name__ == '__main__':
     particle()

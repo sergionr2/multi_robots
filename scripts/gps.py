@@ -21,11 +21,12 @@ GEOMETRIES_SCALE = Vector3(  0.01, 0.01, 0.01 )
 GEOMETRIES_COLOR_ENABLE = ColorRGBA( 25.0/255 ,1, 0, 1 )
 GEOMETRIES_COLOR_DISABLED = ColorRGBA( 255.0/255, 170.0/255, 0, A_IF_DISABLED )
 POSITION_NS = "Position"
-POSITION_SCALE = Vector3(  0.02, 0.02, 0.02 )
+POSITION_SCALE = Vector3(  0.02, 0.02, 0.1 )
 POSITION_COLOR_ENABLE = ColorRGBA( 170.0/255, 85.0/255, 1, 1 )
 POSITION_COLOR_DISABLED = ColorRGBA( 170.0/255, 85.0/255, 1, A_IF_DISABLED )
 VELOCITY_NS = "Velocity"
-VELOCITY_SCALE = Vector3(  0.02, 0.04, 0.04 )
+VELOCITY_LENGTH = 3 # n meters for each meter/second
+VELOCITY_SCALE = Vector3(  0.02, 0.04, 0.04 ) # x diameter, y head diameter, z head length
 VELOCITY_COLOR_ENABLE = ColorRGBA( 1, 170.0/255, 0, 1 )
 VELOCITY_COLOR_DISABLED = ColorRGBA( 1, 170.0/255, 0, A_IF_DISABLED )
 TEXT_NS = "Text"
@@ -187,10 +188,10 @@ def printWorld( robots, obstacles, enableds ):
         else:
             m.color = VELOCITY_COLOR_DISABLED
         m.scale = VELOCITY_SCALE
-        arrowEnd = VELOCITY_SCALE.x
         pos = Point( r.pose.x, r.pose.y, 0 )
         vel = r.velocity
-        m.points = [ pos, Point( pos.x + vel.x*arrowEnd, pos.y + vel.y*arrowEnd, pos.z + vel.z*arrowEnd )]
+
+        m.points = [ pos, Point( pos.x + vel.x*VELOCITY_LENGTH, pos.y + vel.y*VELOCITY_LENGTH, pos.z + vel.z*VELOCITY_LENGTH)]
         markers.append( m )
         cont += 1
 
