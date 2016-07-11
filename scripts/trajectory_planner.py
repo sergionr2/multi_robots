@@ -27,13 +27,16 @@ TEXT_NS = "Text"
 TEXT_SCALE = 0.1
 TEXT_COLOR = ColorRGBA( 1, 1, 1, 1 )
 TRAJECTORY_NS = "Trajectory"
-TRAJECTORY_SCALE = 0.1 #TODO
-TRAJECTORY_COLOR = ColorRGBA( 1, 1, 1, 1 ) #TODO
-NUMBER_OF_LAST_POSES = 100
+TRAJECTORY_SCALE = Vector3( 0.01, 0.01, 0.01 )
+TRAJECTORY_COLOR = ColorRGBA( 1, 65.0/255 , 90.0/255, 0.7 )
+NUMBER_OF_LAST_POSES = 1000 #TODO add distance constaint
 
 HZ = 5 #frecuence of publish
 lastPoses = []
 behavior = "OA"
+
+#behaviors Variables
+trajectoryCounter = 0;
 
 def translatePoint( point3D_toTranslate, pose2D ): # point
     x = point3D_toTranslate.x
@@ -50,7 +53,7 @@ def translatePoint( point3D_toTranslate, pose2D ): # point
     newPoint.y += pose2D.y
     return newPoint #point3D
 
-def printData( info, uid ):
+def paintData( info, uid ):
     FRAME = 'Local_'+str(uid)
     pub = rospy.Publisher( 'local_'+str(uid), MarkerArray, queue_size=10 )
 
@@ -70,6 +73,18 @@ def printData( info, uid ):
     m.color = OBSTACLES_COLOR
     m.scale = OBSTACLES_SCALE
     m.points = info.obstacles
+    cont += 1
+    markers.append( m )
+
+    m = Marker()
+    m.header.frame_id = FRAME
+    m.ns = TRAJECTORY_NS
+    m.id = cont
+    m.type = m.LINE_STRIP
+    m.action = 0 # Add/Modify
+    m.color = TRAJECTORY_COLOR
+    m.scale = TRAJECTORY_SCALE
+    m.points = [ Point( p.x, p.y, 0 ) for p in lastPoses ]
     cont += 1
     markers.append( m )
 
@@ -133,8 +148,10 @@ def printData( info, uid ):
 
     pub.publish( markers )
 
+
 def getInfo( info, uid ):
-    printData( info, uid )
+
+    paintData( info, uid )
     canISeeMe = False
     me = 0
     for r in info.robots:
@@ -142,35 +159,52 @@ def getInfo( info, uid ):
             canISeeMe = True
             me = r
             info.robots.remove(r)
-
+            lastPoses.insert( 0, r.pose )
+            if len( lastPoses ) > NUMBER_OF_LAST_POSES:
+                lastPoses.pop()
     if( canISeeMe ): # if i can see me
         pubPose = rospy.Publisher('pose_'+str(uid), Pose2D, queue_size=10)
         pubPose.publish( me.pose )
     else:
         pass #do something if i am blind
 
+# BEHAVIORS
+def obstacle_avoidance():
+    return Pose2D( 1,0,0 )
+
+def zig_zag_trajectory():
+#ADD w8 to goal TODO
+    global trajectoryCounter
+    trajectoryCounter += 1
+    arrayOfPoints = [
+        Pose2D( 0.25, 1.25, 0),
+        Pose2D( 0.25, 0.25, 0),
+        Pose2D( 1.25, 1.25, 0),
+        Pose2D( 1.25, 0.25, 0),
+    ]
+    return arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ]
+#END OF BEHAVIORS
 
 def setGoal( behavior ):
 
-    return Pose2D( 1, 1, 0 )
-
-def setbehavior( ):
-    #setbehavior
-
-    #assing behavior
-    global behavior
-    behavior = rospy.get_param('~behavior', "OA") #Obstacle avoidance
+    states = {
+        "ZZT": zig_zag_trajectory,
+        "OA": obstacle_avoidance,
+    }
+    function = states.get( behavior, obstacle_avoidance )
+    return function()
 
 def planner():
     #init params
     rospy.init_node('Planner', anonymous=False)
     uid = rospy.get_param( '~id', 1 )
     pubGoal = rospy.Publisher('goal_'+str(uid), Pose2D, queue_size=10)
+    global behavior
+    behavior = rospy.get_param('~behavior', "OA") #Obstacle avoidance
     rate = rospy.Rate( HZ )
     rospy.Subscriber( "info_"+str(uid) , GPSinfo, getInfo, uid )
     while not rospy.is_shutdown():
 
-        setbehavior()
         pubGoal.publish( setGoal( str( behavior ) ) )
         rate.sleep()
 
