@@ -5,6 +5,7 @@
   <node pkg="multi_robots" name="Gps" type="gps.py">
     <param name="map" value="$(find multi_robots)/map.txt" />
     <param name="default_geom" value="$(find multi_robots)/robotGeometry/default.txt" />
+    <param name="noise_amplitud" value="0" />
 
     <param name="robot/-1/geom" value="$(find multi_robots)/robotGeometry/border.txt" />
     <param name="robot/-1/x" value="0" />
@@ -28,7 +29,9 @@
       <param name="y" value="1" />
       <param name="theta" value="0" />
     </node>
+
   </group>
+
   <group>
     <arg name="n" default="2" />
     <param name="~id" type="int" value="$(arg n)" />
@@ -38,34 +41,6 @@
     </node>
 
     <node pkg="multi_robots" name="System_$(arg n)" type="sim_unicycle.py">
-      <param name="x" value="1" />
-      <param name="y" value="1" />
-      <param name="theta" value="0" />
-    </node>
-  </group>
-  <group>
-    <arg name="n" default="3" />
-    <param name="~id" type="int" value="$(arg n)" />
-
-    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
-      <param name="behavior" value="2" />
-    </node>
-
-    <node pkg="multi_robots" name="System_$(arg n)" type="sim_unicycle.py">
-      <param name="x" value="1" />
-      <param name="y" value="1" />
-      <param name="theta" value="0" />
-    </node>
-  </group>
-  <group>
-    <arg name="n" default="4" />
-    <param name="~id" type="int" value="$(arg n)" />
-
-    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
-      <param name="behavior" value="3" />
-    </node>
-
-    <node pkg="multi_robots" name="System_$(arg n)" type="sim_particle.py">
       <param name="x" value="1" />
       <param name="y" value="1" />
       <param name="theta" value="0" />

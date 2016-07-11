@@ -5,6 +5,7 @@
   <node pkg="multi_robots" name="Gps" type="gps.py">
     <param name="map" value="$(find multi_robots)/map.txt" />
     <param name="default_geom" value="$(find multi_robots)/robotGeometry/default.txt" />
+    <param name="noise_amplitud" value="0.001" />
 
     <param name="robot/-1/geom" value="$(find multi_robots)/robotGeometry/border.txt" />
     <param name="robot/-1/x" value="0" />
@@ -22,11 +23,11 @@
     <param name="~id" type="int" value="$(arg n)" />
 
     <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
-      <param name="behavior" value="1" />
+      <param name="behavior" type="str" value="1" />
     </node>
 
     <node pkg="multi_robots" name="System_$(arg n)" type="sender.py">
-      <param name="port" value="/dev/ttyUSB1" />
+      <param name="port" value="/dev/ttyUSB0" />
     </node>
 
   </group>
@@ -36,7 +37,7 @@
     <param name="~id" type="int" value="$(arg n)" />
 
     <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
-      <param name="behavior" value="3" />
+      <param name="behavior" type="str" value="3" />
     </node>
 
     <node pkg="multi_robots" name="System_$(arg n)" type="sim_particle.py">

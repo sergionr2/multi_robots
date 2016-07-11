@@ -122,7 +122,7 @@ def searchIn( pointList, ratio, pose2D ):
                 points.append( p )
     return points
 
-def printWorld( robots, obstacles, enableds ):
+def paintWorld( robots, obstacles, enableds ):
 
     #initialize the topic
     pub = rospy.Publisher( 'world', MarkerArray, queue_size=10 )
@@ -232,7 +232,7 @@ def publish( ids, key, mapMatrix ):
             staticPoints.extend( robotActualGeom[i] )
 
     #print staticPoints
-    printWorld( robots.values(), staticPoints, enabled )
+    paintWorld( robots.values(), staticPoints, enabled )
 
     for i in ids: #iterate every robot
         if i >= 0 and enabled[i]:
@@ -272,7 +272,7 @@ def initTopics( ids ):
 
 def setRobotPose( robotPose ): #Getting new poses
 
-    if robotPose.id != 0: # filter ID 0 because of Noise
+    if robotPose.id != 0 and robotPose.id <= 25: # filter ID 0 and IDs > 25 because of Noise
         if idList.count( robotPose.id ) == 0 : #Add the new robot to topic list
             topicList[ robotPose.id ] = rospy.Publisher( 'info_' + str( robotPose.id ), GPSinfo, queue_size=10 )
             #add defaul geometry if needed
