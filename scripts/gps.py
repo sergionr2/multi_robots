@@ -11,8 +11,27 @@ from multi_robots.msg import *
 from std_msgs.msg import *
 from visualization_msgs.msg import *
 
-#color Constants
-
+#paint Constants
+A_IF_DISABLED = 0.4
+OBSTACLES_NS = "Obstacles"
+OBSTACLES_SCALE = Vector3( 0.02, 0.02, 0.02 )
+OBSTACLES_COLOR = ColorRGBA( 1, 0, 0, 1 )
+GEOMETRIES_NS = "Geometries"
+GEOMETRIES_SCALE = Vector3(  0.01, 0.01, 0.01 )
+GEOMETRIES_COLOR_ENABLE = ColorRGBA( 25.0/255 ,1, 0, 1 )
+GEOMETRIES_COLOR_DISABLED = ColorRGBA( 255.0/255, 170.0/255, 0, A_IF_DISABLED )
+POSITION_NS = "Position"
+POSITION_SCALE = Vector3(  0.02, 0.02, 0.02 )
+POSITION_COLOR_ENABLE = ColorRGBA( 170.0/255, 85.0/255, 1, 1 )
+POSITION_COLOR_DISABLED = ColorRGBA( 170.0/255, 85.0/255, 1, A_IF_DISABLED )
+VELOCITY_NS = "Velocity"
+VELOCITY_SCALE = Vector3(  0.02, 0.04, 0.04 )
+VELOCITY_COLOR_ENABLE = ColorRGBA( 1, 170.0/255, 0, 1 )
+VELOCITY_COLOR_DISABLED = ColorRGBA( 1, 170.0/255, 0, A_IF_DISABLED )
+TEXT_NS = "Text"
+TEXT_SCALE = 0.1
+TEXT_COLOR_ENABLE = ColorRGBA( 1, 1, 1, 1 )
+TEXT_COLOR_DISABLED = ColorRGBA( 1, 1, 1, A_IF_DISABLED )
 
 
 MAXTIME = 0.5 #seconds, time to unable if not visible
@@ -104,27 +123,24 @@ def searchIn( pointList, ratio, pose2D ):
 
 def printWorld( robots, obstacles, enableds ):
 
+    #initialize the topic
     pub = rospy.Publisher( 'world', MarkerArray, queue_size=10 )
-    markers = []
-    cont = 0
+    markers = [] # markers to publish
+    cont = 0 # marker cont
+    #Erase all
     m = Marker()
     m.action = 3 # erase all
     markers.append( m )
     cont += 1
-
+    #Start adding markers
     m = Marker()
     m.header.frame_id = FRAME
-    m.ns = "obstacles"
+    m.ns = OBSTACLES_NS
     m.id = cont
     m.type = m.SPHERE_LIST
     m.action = 0 # Add/Modify
-    m.scale.x = 0.02
-    m.scale.y = 0.02
-    m.scale.z = 0.02
-    m.color.a = 1.0
-    m.color.r = 255.0/255
-    m.color.g = 0/255
-    m.color.b = 0/255
+    m.scale = OBSTACLES_SCALE
+    m.color = OBSTACLES_COLOR
     m.points = obstacles
     cont += 1
     markers.append( m )
@@ -132,14 +148,15 @@ def printWorld( robots, obstacles, enableds ):
     for r in robots:
         m = Marker()
         m.header.frame_id = FRAME
-        m.ns = "Geom"
+        m.ns = GEOMETRIES_NS
         m.id = cont
         m.type = m.LINE_STRIP # LINE
+        m.action = 0 # Add/Modify
         if( enableds[r.id] ):
-            m.color = ColorRGBA( 25.0/255 ,1, 0, 1 )
+            m.color = GEOMETRIES_COLOR_ENABLE
         else:
-            m.color = ColorRGBA( 255.0/255 ,170.0/255, 0, 1 )
-        m.scale = Vector3( 0.01, 0.01, 0.01 )
+            m.color = GEOMETRIES_COLOR_DISABLED
+        m.scale = GEOMETRIES_SCALE
         points = [ translatePoint( p, r.pose ) for p in r.geometry ]
         m.points = points
         markers.append( m )
@@ -147,44 +164,50 @@ def printWorld( robots, obstacles, enableds ):
 
         m = Marker()
         m.header.frame_id = FRAME
-        m.ns = "Pos"
+        m.ns = POSITION_NS
         m.id = cont
         m.type = m.SPHERE
+        m.action = 0 # Add/Modify
         m.pose.position = Point( r.pose.x, r.pose.y, 0 )
-        m.color = ColorRGBA( 170.0/255 ,85.0/255, 255/255, 1 )
-        m.scale = Vector3( 0.02, 0.02, 0.02 )
+        if( enableds[r.id] ):
+            m.color = POSITION_COLOR_ENABLE
+        else:
+            m.color = POSITION_COLOR_DISABLED
+        m.scale = POSITION_SCALE
         markers.append( m )
         cont += 1
 
         m = Marker()
         m.header.frame_id = FRAME
-        m.ns = "vel"
+        m.ns = VELOCITY_NS
         m.id = cont
         m.type = m.ARROW
-        m.color = ColorRGBA( 1 ,170.0/255, 0, 1 )
-        s2 = 0.2
-        m.scale = Vector3( 0.02, 0.04, 0.04 )
+        if( enableds[r.id] ):
+            m.color = VELOCITY_COLOR_ENABLE
+        else:
+            m.color = VELOCITY_COLOR_DISABLED
+        m.scale = VELOCITY_SCALE
+        arrowEnd = VELOCITY_SCALE.x
         pos = Point( r.pose.x, r.pose.y, 0 )
         vel = r.velocity
-        m.points = [ pos, Point( pos.x + vel.x*s2,  pos.y + vel.y*s2, pos.z + vel.z*s2 )]
+        m.points = [ pos, Point( pos.x + vel.x*arrowEnd, pos.y + vel.y*arrowEnd, pos.z + vel.z*arrowEnd )]
         markers.append( m )
         cont += 1
 
         m = Marker()
         m.header.frame_id = FRAME
-        m.ns = "text"
+        m.ns = TEXT_NS
         m.id = cont
         m.type = m.TEXT_VIEW_FACING
         m.action = 0 # Add/Modify
         m.pose.position.x = pos.x
         m.pose.position.y = pos.y
-        s = 0.1
-        m.pose.position.z = s
-        m.scale.z = s
-        m.color.a = 1.0
-        m.color.r = 255.0/255
-        m.color.g = 255.0/255
-        m.color.b = 255.0/255
+        m.pose.position.z = TEXT_SCALE
+        if( enableds[r.id] ):
+            m.color = TEXT_COLOR_ENABLE
+        else:
+            m.color = TEXT_COLOR_DISABLED
+        m.scale.z = TEXT_SCALE
         m.text = "ID: " + str( r.id ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) )
         cont += 1
         markers.append( m )
