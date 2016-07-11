@@ -11,12 +11,12 @@ HZ = 0.066 #frecuence of publish reference in hz
 ID = 0
 FRAME = "Local_1"#
 
-def translatePoint( point3D, pose2D ):#rotation en Z
-    x = point3D.x
-    y = point3D.y
-    z = point3D.z
+def translatePoint( point3D_toTranslate, pose2D ): # point
+    x = point3D_toTranslate.x
+    y = point3D_toTranslate.y
+    z = point3D_toTranslate.z
 
-    theta = point3D.x
+    theta = point3D_toTranslate.x
     newPoint = Point( 0, 0, 0 )
     #rotate
     newPoint.x = x*math.cos( pose2D.theta  ) - y*math.sin( pose2D.theta )

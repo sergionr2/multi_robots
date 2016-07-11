@@ -11,24 +11,23 @@ from multi_robots.msg import *
 from std_msgs.msg import *
 from visualization_msgs.msg import *
 
+#color Constants
+
+
+
 MAXTIME = 0.5 #seconds, time to unable if not visible
-N = 20 #number of points to calcul velocity
-HZ = 30 #frecuence of publish 30hz
-URL_OBJS = 0
-URL_MAP = 0
+N = 30 #number of points to compute velocity
+HZ = 30 #publish frecuence 30hz
 
 INIT_X = -1
 INIT_Y = -1
 INIT_THETA = math.pi /4
 FRAME = 'World'
-DEFAULT_GEOM = '8'
 
 robotGeom = {} # int : Point[]
 robotLastPoses = {} # int : RobotPose[N]
 idList = [] # IDs
 topicList = {} # int : pub
-
-A = 0 # Noise Amplitud m
 
 def setEnableds(): #disabled if pose is older that MAXTIME
 
@@ -46,35 +45,37 @@ def setEnableds(): #disabled if pose is older that MAXTIME
 
     return enabled
 
-def getRobotLastPose( lastPoses ):
+def getRobotLastPose( lastPoses ): #computes Pose and velocity
     if len(lastPoses) > 0:
         poseNew  = lastPoses[0].pose
         dt = 1
-        if len(lastPoses) == 1:
+        if len(lastPoses) == 1: # inmobile object
             poseOld  = lastPoses[0].pose
         else:
             poseOld  = lastPoses[N-1].pose
-            dt = ( lastPoses[0].time.to_sec() - lastPoses[N-1].time.to_sec() )#.to_sec()
-            if dt == 0:
+            dt = ( lastPoses[0].time.to_sec() - lastPoses[N-1].time.to_sec() )
+            if dt == 0: #to prevent division by 0
                 dt = 1
         x = poseNew.x
         y = poseNew.y
         dx = x - poseOld.x
         dy = y - poseOld.y
+        A = rospy.get_param('~noise_amplitud', 0 ) #noise amplitud
         #add Noise if not inmobile object
         if len(lastPoses) != 1:
             x += A*random.random()
             y += A*random.random()
+
         return Pose2D( x, y, poseNew.theta ), Vector3( dx/dt, dy/dt, 0 )
     else:
-        return Pose2D( INIT_X, INIT_Y, INIT_THETA ), Vector3( 0, 0, 0 )
+        return Pose2D( INIT_X, INIT_Y, INIT_THETA ), Vector3( 0, 0, 0 ) #return initial values
 
-def translatePoint( point3D, pose2D ):#rotation en Z
-    x = point3D.x
-    y = point3D.y
-    z = point3D.z
+def translatePoint( point3D_toTranslate, pose2D ): # point
+    x = point3D_toTranslate.x
+    y = point3D_toTranslate.y
+    z = point3D_toTranslate.z
 
-    theta = point3D.x
+    theta = point3D_toTranslate.x
     newPoint = Point( 0, 0, 0 )
     #rotate
     newPoint.x = x*math.cos( pose2D.theta  ) - y*math.sin( pose2D.theta )
@@ -84,13 +85,14 @@ def translatePoint( point3D, pose2D ):#rotation en Z
     newPoint.y += pose2D.y
     return newPoint #point3D
 
-def distance( p1, p2 ):
-    dx = p1.x - p2.x
-    dy = p1.y - p2.y
-    dz = p1.z - p2.z
+def distance( point1, point2 ):  #Computes the distance between two points
+    dx = point1.x - point2.x
+    dy = point1.y - point2.y
+    dz = point1.z - point2.z
     return math.sqrt( dx**2 + dy**2 + dz**2 )
 
 def searchIn( pointList, ratio, pose2D ):
+    #search in a Point list, the points near to pose2D in a ratio
     points = []
     x = pose2D.x
     y = pose2D.y
@@ -101,6 +103,7 @@ def searchIn( pointList, ratio, pose2D ):
     return points
 
 def printWorld( robots, obstacles, enableds ):
+
     pub = rospy.Publisher( 'world', MarkerArray, queue_size=10 )
     markers = []
     cont = 0
@@ -210,7 +213,7 @@ def publish( ids, key, mapMatrix ):
     for i in ids: #iterate every robot
         if i >= 0 and enabled[i]:
             visibleRobots = []
-            mapPoints = [] #Posible Obstacles, Every not visible point
+            mapPoints = [] #Posible Obstacles (Every not visible point)
             mapPoints.extend( staticPoints )
             for k in ids:
                 if enabled[k]:
@@ -232,38 +235,44 @@ def publish( ids, key, mapMatrix ):
                         ratio = float( mapMatrix[ key[i] ][ key[k]+1 ] )/1000
                         obstacles.extend( searchIn( mapPoints, ratio, robots[k].pose ) )
             if not( i in key ):
-                visibleRobots.append( robots[i] ) # if not in map
+                visibleRobots.append( robots[i] ) # if not in map publish pose
             #publish
             topicList[i].publish( GPSinfo( obstacles, visibleRobots ) )
 
 def initTopics( ids ):
     pubs = {}
     for i in ids:
-        if i >= 0:
+        if i >= 0: # negative ids are inmobile objects
             pubs[i] = rospy.Publisher( 'info_' + str( i ), GPSinfo, queue_size=10 )
-
     return pubs
 
-def setRobotPose( robotPose ):
+def setRobotPose( robotPose ): #Getting new poses
+
     if robotPose.id != 0: # filter ID 0 because of Noise
-        if idList.count( robotPose.id ) == 0 : #Add the new robot
+        if idList.count( robotPose.id ) == 0 : #Add the new robot to topic list
             topicList[ robotPose.id ] = rospy.Publisher( 'info_' + str( robotPose.id ), GPSinfo, queue_size=10 )
+            #add defaul geometry if needed
             if( not robotGeom.has_key( robotPose.id ) ):
-                robotGeom[ robotPose.id ] = getPolygon( DEFAULT_GEOM )
+                default_geometry_url = rospy.get_param('~default_geom')
+                robotGeom[ robotPose.id ] = getPolygon( default_geometry_url )
+            #Create new lastPoses list
             robotLastPoses[ robotPose.id ] = []
+            #Finally add to the id list
             idList.append( robotPose.id )
             print "New Robot Added ID: ", robotPose.id
+        #add to the lastPoses the new position
         while len( robotLastPoses[ robotPose.id ] ) <= N:
             robotLastPoses[ robotPose.id ].insert(0, robotPose )
         robotLastPoses[ robotPose.id ].pop()
 
-def readMapMatrix():
-    f = open ( URL_MAP, 'r' )
+def readMapMatrix(): #reading visibility map
+    map_url = rospy.get_param('~map')
+    f = open ( map_url, 'r' )
     matrix = [ map(int, line.split(',') ) for line in f ] #read file
     idToRow = dict( ( matrix[row][0] , row ) for row in range( 0, len(matrix) ) )
     return idToRow, matrix
 
-def getPolygon( url ):
+def getPolygon( url ): #this function reads a geometryFile
     points = 0
     try:
         f = open ( url, 'r' )
@@ -271,10 +280,10 @@ def getPolygon( url ):
     except Exception as e:
         print "Invalid or inexistent file "+ url +", using default geometry: (0,0)\n"
         points = [ [ 0,0 ] ]
-    return [ ( Point( float(point[0])/1000, float(point[1])/1000, 0 ) ) for point in points ] #convert in m
-
+    return [ ( Point( float(point[0])/1000, float(point[1])/1000, 0 ) ) for point in points ] #/1000 to convert to meters
 
 def readRobotGeom():
+    #Reading the 'robot' parameter
     geomDictionary = rospy.get_param('~robot' )
     ids = []
     for i in geomDictionary.keys():
@@ -300,34 +309,25 @@ def shutDown():
 def gps():
     rospy.init_node('Gps', anonymous=False)
 
-    global URL_OBJS, URL_MAP, DEFAULT_GEOM
-    #init params
-    URL_OBJS = rospy.get_param('~objects', '/home/nicolas/catkin_ws/src/multi_robots/GPSconfig/objects.txt' )
-    URL_MAP = rospy.get_param('~map', '/home/nicolas/catkin_ws/src/multi_robots/GPSconfig/map.txt' )
-    DEFAULT_GEOM = rospy.get_param('~default_geom', '/home/nicolas/catkin_ws/src/multi_robots/robotGeometry/default.txt' )
-
+    #init params, read parameters and get the visibility map
     # read Objects file
     global idList, robotGeom, robotLastPoses
     idList, robotGeom, robotLastPoses = readRobotGeom()
-
-    #print "Invalid or inexistent file 'objects', GPS cannot start \n Verify file URL, check README"
-        #raise rospy.ROSInterruptException
-    try: # read Map file
+    # read Map file
+    try:
         keys, mapMatrix = readMapMatrix()
     except Exception as e:
         print "Invalid or inexistent file 'map', GPS cannot start \n Verify file URL, check README"
-        #raise rospy.ROSInterruptException
-
+        raise rospy.ROSInterruptException
     rospy.on_shutdown( shutDown )
     global topicList
     topicList = initTopics( idList )
     rospy.Subscriber( "robot_pose" , RobotPose, setRobotPose )
     rate = rospy.Rate( HZ )
     while not rospy.is_shutdown():
-
+        # a copy of ids is made to protect from 'setRobotPose()' adding more ids
         publish( list(idList), keys, mapMatrix )
         rate.sleep()
-
 
 if __name__ == '__main__':
     try:

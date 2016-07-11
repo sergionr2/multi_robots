@@ -20,7 +20,7 @@ def correctTheta( q ):
     theta += math.pi/2
     if( theta > math.pi ): # verifies that angle is between -pi and pi
         theta -= 2*math.pi
-    return t
+    return theta
 
 def correctX( x ):
     A1 = 0.065087 # Constants obtained from measurements
@@ -35,9 +35,9 @@ def correctY( y ):
     error = A2*(y**2)+A1*(y)# get the error
     return y - error # corriges de error
 
-def reciveAlvarMarkers(  ):
+def reciveAlvarMarkers( alvar ):
     pub = rospy.Publisher('robot_pose', RobotPose, queue_size=10)
-    for i in data.markers:
+    for i in alvar.markers:
         p = i.pose.pose.position # Get position from message AlvarMarkers
         q = i.pose.pose.orientation # Get orientation from message AlvarMarkers
         #X asigned to y to rotate the coordinate system to a desired one
