@@ -195,14 +195,9 @@ def zig_zag_trajectory():
     return arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ]
 
 #END OF BEHAVIORS
-def setBehavior( behavior ):
-    #TODO all
-    states = {
-        "ZZT": zig_zag_trajectory,
-        "OA": obstacle_avoidance,
-    }
-    function = states.get( behavior, obstacle_avoidance )
-    return function()
+def setBehavior( behav ):
+    global behavior
+    behavior = behav
 
 def setGoal( behavior ):
 
@@ -218,8 +213,7 @@ def planner():
     rospy.init_node('Planner', anonymous=False)
     uid = rospy.get_param( '~id', 1 )
     pubGoal = rospy.Publisher('goal_'+str(uid), Pose2D, queue_size=10)
-    global behavior
-    behavior = rospy.get_param('~behavior', "OA") #Obstacle avoidance
+    setBehavior( rospy.get_param('~behavior', "OA") ) #Obstacle avoidance
     rate = rospy.Rate( HZ )
     rospy.Subscriber( "info_"+str(uid) , GPSinfo, getInfo, uid )
     while not rospy.is_shutdown():
