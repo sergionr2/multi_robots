@@ -29,14 +29,21 @@ TEXT_COLOR = ColorRGBA( 1, 1, 1, 1 )
 TRAJECTORY_NS = "Trajectory"
 TRAJECTORY_SCALE = Vector3( 0.01, 0.01, 0.01 )
 TRAJECTORY_COLOR = ColorRGBA( 1, 65.0/255 , 90.0/255, 0.7 )
-NUMBER_OF_LAST_POSES = 1000 #TODO add distance constaint
+NUMBER_OF_LAST_POSES = 1000
 
+SAVE_TO_TRAJECTORY_DISTANCE = 0.01
+CHANGE_GOAL_DISTANCE = 0.06
 HZ = 5 #frecuence of publish
 lastPoses = []
 behavior = "OA"
-
+me = 0
 #behaviors Variables
-trajectoryCounter = 0;
+trajectoryCounter = 0
+
+def distance( point1, point2 ):  #Computes the distance between two points
+    dx = point1.x - point2.x
+    dy = point1.y - point2.y
+    return math.sqrt( dx**2 + dy**2 )
 
 def translatePoint( point3D_toTranslate, pose2D ): # point
     x = point3D_toTranslate.x
@@ -148,18 +155,20 @@ def paintData( info, uid ):
 
     pub.publish( markers )
 
-
 def getInfo( info, uid ):
-
     paintData( info, uid )
     canISeeMe = False
-    me = 0
     for r in info.robots:
         if( r.id == uid ):
             canISeeMe = True
+            global me
             me = r
             info.robots.remove(r)
-            lastPoses.insert( 0, r.pose )
+            if len( lastPoses ) > 0:
+                if distance( me.pose, lastPoses[0] ) > SAVE_TO_TRAJECTORY_DISTANCE:
+                    lastPoses.insert( 0, r.pose )
+            else:
+                lastPoses.insert( 0, r.pose )
             if len( lastPoses ) > NUMBER_OF_LAST_POSES:
                 lastPoses.pop()
     if( canISeeMe ): # if i can see me
@@ -173,17 +182,27 @@ def obstacle_avoidance():
     return Pose2D( 1,0,0 )
 
 def zig_zag_trajectory():
-#ADD w8 to goal TODO
-    global trajectoryCounter
-    trajectoryCounter += 1
     arrayOfPoints = [
         Pose2D( 0.25, 1.25, 0),
         Pose2D( 0.25, 0.25, 0),
         Pose2D( 1.25, 1.25, 0),
         Pose2D( 1.25, 0.25, 0),
     ]
+    if isinstance( me, Robot ):
+        if distance( me.pose, arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ] ) < CHANGE_GOAL_DISTANCE:
+            global trajectoryCounter
+            trajectoryCounter += 1
     return arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ]
+
 #END OF BEHAVIORS
+def setBehavior( behavior ):
+    #TODO all
+    states = {
+        "ZZT": zig_zag_trajectory,
+        "OA": obstacle_avoidance,
+    }
+    function = states.get( behavior, obstacle_avoidance )
+    return function()
 
 def setGoal( behavior ):
 

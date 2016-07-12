@@ -33,7 +33,7 @@
     <param name="~id" type="int" value="$(arg n)" />
 
     <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
-      <param name="behavior" type="str" value="OA" />
+      <param name="behavior" type="str" value="ZZT" />
     </node>
 
     <node pkg="multi_robots" name="System_$(arg n)" type="sim_unicycle.py">

@@ -1,7 +1,5 @@
 <launch>
 
-  <node pkg="multi_robots" name="Corrector" type="corrector.py"/>
-
   <node pkg="multi_robots" name="Gps" type="gps.py">
     <param name="map" value="$(find multi_robots)/map.txt" />
     <param name="default_geom" value="$(find multi_robots)/robotGeometry/default.txt" />
