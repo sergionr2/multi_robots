@@ -36,7 +36,8 @@ CHANGE_GOAL_DISTANCE = 0.06
 HZ = 5 #frecuence of publish
 lastPoses = []
 behavior = "OA"
-me = 0
+robotInfo = [ 0, 0 ] #actual and last information
+me = [ 0, 0 ]
 #behaviors Variables
 trajectoryCounter = 0
 
@@ -147,9 +148,9 @@ def paintData( info, uid ):
         m.scale.z = TEXT_SCALE
         m.color = TEXT_COLOR
         if( r.id == uid ):
-            m.text = "Behavior: " + behavior + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) )
+            m.text = "Behavior: " + behavior
         else:
-            m.text = "ID: " + str( r.id ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) )
+            m.text = "ID: " + str( r.id )
         cont += 1
         markers.append( m )
 
@@ -158,28 +159,46 @@ def paintData( info, uid ):
 def getInfo( info, uid ):
     paintData( info, uid )
     canISeeMe = False
+    global me, robotInfo
+    #get relevant information, me, info, and lastPose
     for r in info.robots:
         if( r.id == uid ):
             canISeeMe = True
-            global me
-            me = r
+            me[0] = r
             info.robots.remove(r)
-            if len( lastPoses ) > 0:
-                if distance( me.pose, lastPoses[0] ) > SAVE_TO_TRAJECTORY_DISTANCE:
+            robotInfo[0] = info
+            #insert last pose
+            if len( lastPoses ) > 0: #id is the first time
+                if distance( me[0].pose, lastPoses[0] ) > SAVE_TO_TRAJECTORY_DISTANCE:
                     lastPoses.insert( 0, r.pose )
             else:
                 lastPoses.insert( 0, r.pose )
+            #keep the size of lastPoses bounded
             if len( lastPoses ) > NUMBER_OF_LAST_POSES:
                 lastPoses.pop()
+
     if( canISeeMe ): # if i can see me
         pubPose = rospy.Publisher('pose_'+str(uid), Pose2D, queue_size=10)
-        pubPose.publish( me.pose )
+        pubPose.publish( me[0].pose )
     else:
+        me[0] = 0
+        robotInfo[0] = info
         pass #do something if i am blind
 
 # BEHAVIORS
 def obstacle_avoidance():
-    return Pose2D( 1,0,0 )
+    d = 0.20
+    if( me[0] != 0 ):
+        for point in robotInfo[0].obstacles:
+            if distance( me[0].pose, point ) < d:
+                d = distance( me[0].pose, point )
+                alfa = math.atan2( point.y - me[0].pose.y, point.x - me[0].pose.x )
+        ratio = 0.50
+        if d == 0.20:
+            return 0
+        else:
+            return Pose2D( -1*ratio*math.cos(alfa) + me[0].pose.x, -1*ratio*math.sin(alfa) + me[0].pose.y, 0 )
+    return 0
 
 def zig_zag_trajectory():
     arrayOfPoints = [
@@ -188,8 +207,8 @@ def zig_zag_trajectory():
         Pose2D( 1.25, 1.25, 0),
         Pose2D( 1.25, 0.25, 0),
     ]
-    if isinstance( me, Robot ):
-        if distance( me.pose, arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ] ) < CHANGE_GOAL_DISTANCE:
+    if isinstance( me[0], Robot ):
+        if distance( me[0].pose, arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ] ) < CHANGE_GOAL_DISTANCE:
             global trajectoryCounter
             trajectoryCounter += 1
     return arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ]
@@ -213,12 +232,22 @@ def planner():
     rospy.init_node('Planner', anonymous=False)
     uid = rospy.get_param( '~id', 1 )
     pubGoal = rospy.Publisher('goal_'+str(uid), Pose2D, queue_size=10)
+    pubGoalPoint = rospy.Publisher('point_'+str(uid), PointStamped, queue_size=10)
     setBehavior( rospy.get_param('~behavior', "OA") ) #Obstacle avoidance
     rate = rospy.Rate( HZ )
     rospy.Subscriber( "info_"+str(uid) , GPSinfo, getInfo, uid )
+    global me, robotInfo
     while not rospy.is_shutdown():
-
-        pubGoal.publish( setGoal( str( behavior ) ) )
+        newGoal = setGoal( str( behavior ) )
+        if newGoal != 0:
+            goalPoint = PointStamped()
+            goalPoint.header.stamp = rospy.Time().now()
+            goalPoint.header.frame_id = 'Local_'+str(uid)
+            goalPoint.point = Point( newGoal.x, newGoal.y, 0 )
+            pubGoalPoint.publish( goalPoint )
+            pubGoal.publish( newGoal )
+        me[1] = me[0]
+        robotInfo[1] = robotInfo[0]
         rate.sleep()
 
 if __name__ == '__main__':
