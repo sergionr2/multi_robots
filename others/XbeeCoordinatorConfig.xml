@@ -11,7 +11,7 @@
       <setting command="SC">1FFE</setting>
       <setting command="SD">3</setting>
       <setting command="NJ">FF</setting>
-      <setting command="NI">ROBOT0</setting>
+      <setting command="NI">ROBOT6</setting>
       <setting command="DD">0</setting>
       <setting command="NT">3C</setting>
       <setting command="AR">FF</setting>

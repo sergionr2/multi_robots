@@ -5,14 +5,6 @@ const int DIRB = 13; //Connect on Pin 13
 const int PWMB = 11; //Connect on Pin 11
 const int ledPin = 10;
 //Communication protocol checking variables
-bool check_start = 0;
-bool check_ID = 0;
-
-//This module's variables
-const char START_CHAR = '#';
-const char MY_ID = '1';
-const char BROADCAST_ID = '0';
-const char END_CHAR = '.';
 
 //Action variables
 char action = 0;
@@ -25,7 +17,6 @@ void setup() {
   pinMode(PWMA,OUTPUT);
   pinMode(DIRB,OUTPUT);
   pinMode(PWMB,OUTPUT);
-  //pinMode(LED_PIN, OUTPUT);
   
   Serial.begin(9600);
 
@@ -36,38 +27,25 @@ void setup() {
 
 void loop(){
   digitalWrite(ledPin, HIGH);
-  Serial.print("income = ");
-  Serial.println(income);
-  Serial.print("check_start = ");
-  Serial.println(check_start);
-  Serial.print("check_ID = ");
-  Serial.println(check_ID);
+
   Serial.print("action = ");
   Serial.println(action);
   Serial.print("power = ");
-  Serial.println(power);
+  Serial.println((byte)power);
   Serial.println("-----");
   
   if ( Serial.available() > 0 ){    
     income = Serial.read();
 
-    if(income == START_CHAR){
-      check_start = 1;
-      Serial.println("START CHECKED!!!");
-    }else if((income == MY_ID || income == BROADCAST_ID) && check_start == 1){
-      check_ID = 1;
-      Serial.println("ID CHECKED!!!");
-    }else if((income == 'z' || income == 'q' || income == 's' || income == 'd' || income == 'a') && check_start == 1 && check_ID == 1){
+
+   if(income == 'z' || income == 'q' || income == 's' || income == 'd' || income == 'a'){
       action = income;
       Serial.println("ACTION CHECKED!!!");
-    }else if((income >= 'A' && income <= 'J') && check_start == 1 && check_ID == 1){
+   }
+    else if(income >= '0' && income <= '9'){
       power = income;
-      power = (power - 'A')*5 + 25;
+      power = (power - '0')*25 + 25;
       Serial.println("POWER CHECKED!!!");
-    }else if(income == END_CHAR){
-      check_start = 0;
-      check_ID = 0;
-      Serial.println("END CHECKED!!!");
     }
   }
 

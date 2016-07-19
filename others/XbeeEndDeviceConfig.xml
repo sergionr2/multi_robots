@@ -6,13 +6,13 @@
     <settings>
       <setting command="ID">10</setting>
       <setting command="DH">13A200</setting>
-      <setting command="DL">408C595E</setting>
+      <setting command="DL">40C36490</setting>
       <setting command="BH">0</setting>
       <setting command="SC">1FFE</setting>
       <setting command="SD">3</setting>
       <setting command="JN">1</setting>
       <setting command="NJ">FF</setting>
-      <setting command="NI">PC1</setting>
+      <setting command="NI">PC6</setting>
       <setting command="DD">0</setting>
       <setting command="NT">3C</setting>
       <setting command="AR">FF</setting>

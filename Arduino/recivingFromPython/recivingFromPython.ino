@@ -76,16 +76,17 @@ void setup() {
 }
 
 void setVelocity( int pwmPin, int dirPin, double w ){ // pwm_pin, direction_pin, velocity
-  if(DEBUG)Serial.println("Seting Velocity");
+  //if(DEBUG)Serial.println( "setting Vel" ); 
   if( w < 0 )
     digitalWrite( dirPin, LOW );
   else
     digitalWrite( dirPin, HIGH );
-  w = abs( w );
+  w = abs( w ); 
+  if(DEBUG)Serial.println( w ); 
   byte w_pwm = 0.2154 * w * R + 64.02; 
   if( w_pwm < 65 )
     w_pwm = 0;  
-  //Serial.println( w_pwm ); 
+  if(DEBUG)Serial.println( w_pwm ); 
   analogWrite( pwmPin, w_pwm );
 }
 void control()
@@ -209,6 +210,7 @@ void loop() {
         }
         else{
           setPose( values[0], values[1], values[2] );
+          if(DEBUG)Serial.println("setPose");
         }
 
 
@@ -217,12 +219,12 @@ void loop() {
     firstStart = false;
   } 
   //uncomment to DEBUG  
-  if(DEBUG){         
-    for( int i = 0; i < N_VALUES; i++){
-      Serial.print( values[i] );
-      Serial.print( ' ' );
-    } 
-    Serial.println();
-    //delay(200);
-  }
+//  if(DEBUG){         
+//    for( int i = 0; i < N_VALUES; i++){
+//      Serial.print( values[i] );
+//      Serial.print( ' ' );
+//    } 
+//    Serial.println();
+//    delay(200);
+//  }
 }

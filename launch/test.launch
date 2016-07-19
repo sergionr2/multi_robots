@@ -18,13 +18,11 @@
     <param name="~id" type="int" value="$(arg n)" />
 
     <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
-      <param name="behavior" type="str" value="OA" />
+      <param name="behavior" type="str" value="ZZT" />
     </node>
 
-    <node pkg="multi_robots" name="System_$(arg n)" type="sim_particle.py">
-      <param name="x" value="1" />
-      <param name="y" value="1" />
-      <param name="theta" value="0" />
+    <node pkg="multi_robots" name="System_$(arg n)" type="sender.py">
+        <param name="port" value="/dev/ttyUSB0" />
     </node>
 
   </group>
@@ -34,10 +32,9 @@
     <param name="~id" type="int" value="$(arg n)" />
 
     <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
-      <param name="behavior" type="str" value="ZZT" />
+      <param name="behavior" type="str" value="OA" />
     </node>
-
-    <node pkg="multi_robots" name="System_$(arg n)" type="sim_unicycle.py">
+    <node pkg="multi_robots" name="System_$(arg n)" type="sim_particle.py">
       <param name="x" value="1" />
       <param name="y" value="1" />
       <param name="theta" value="0" />
