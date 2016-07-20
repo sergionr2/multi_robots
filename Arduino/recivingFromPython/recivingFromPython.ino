@@ -33,10 +33,10 @@ const double R = 30; //mm
 const double L = 100;//mm
 
 const float W_MAX = 6; //rads/s
-const float W_MIN = 3;
+const float W_MIN = 2;
 
-const float V_MAX = 4.5; //rads/s
-const float V_MIN = 2.2;
+const float V_MAX = 4; //rads/s
+const float V_MIN = 3;
 const int D = 400; // if error larger than D use V_MAX
 
 const float KP = 5;

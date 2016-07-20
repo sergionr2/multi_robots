@@ -29,7 +29,7 @@ TEXT_COLOR = ColorRGBA( 1, 1, 1, 1 )
 TRAJECTORY_NS = "Trajectory"
 TRAJECTORY_SCALE = Vector3( 0.01, 0.01, 0.01 )
 TRAJECTORY_COLOR = ColorRGBA( 1, 65.0/255 , 90.0/255, 0.7 )
-NUMBER_OF_LAST_POSES = 1000
+NUMBER_OF_LAST_POSES = 300
 
 SAVE_TO_TRAJECTORY_DISTANCE = 0.01
 CHANGE_GOAL_DISTANCE = 0.06
@@ -202,10 +202,10 @@ def obstacle_avoidance():
 
 def zig_zag_trajectory():
     arrayOfPoints = [
-        Pose2D( 0.25, 1.25, 0),
-        Pose2D( 0.25, 0.25, 0),
-        Pose2D( 1.25, 1.25, 0),
-        Pose2D( 1.25, 0.25, 0),
+        Pose2D( 0.3, 2, 0),
+        Pose2D( 0.3, 0.8, 0),
+        Pose2D( 1.4, 2, 0),
+        Pose2D( 1.4, 0.8, 0),
     ]
     if isinstance( me[0], Robot ):
         if distance( me[0].pose, arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ] ) < CHANGE_GOAL_DISTANCE:

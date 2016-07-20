@@ -19,11 +19,11 @@ R = 0.030 # m  wheel radius
 L = 0.100 # m Distance between wheels
 
 # MAX angular speed
-W_MAX = 5 #rads/s
-W_MIN = 3
+W_MAX = 6 #rads/s
+W_MIN = 2
 #MAX linear speed
-V_MAX = 5 # rads/s, *R to m/s
-V_MIN = 2.2
+V_MAX = 4 # rads/s, *R to m/s
+V_MIN = 2
 
 KP = 5 #for the angularSpeed
 KI = 0
