@@ -20,7 +20,7 @@ POSITION_NS = "Position"
 POSITION_SCALE = Vector3(  0.02, 0.02, 0.1 )
 POSITION_COLOR = ColorRGBA( 170.0/255, 85.0/255, 1, 1 )
 VELOCITY_NS = "Velocity"
-VELOCITY_LENGTH = 3 # n meters for each meter/second
+VELOCITY_LENGTH = 2 # n meters for each meter/second
 VELOCITY_SCALE = Vector3(  0.02, 0.04, 0.04 ) # x diameter, y head diameter, z head length
 VELOCITY_COLOR = ColorRGBA( 1, 170.0/255, 0, 1 )
 TEXT_NS = "Text"
@@ -37,9 +37,22 @@ HZ = 5 #frecuence of publish
 lastPoses = []
 behavior = "OA"
 robotInfo = [ 0, 0 ] #actual and last information
-me = [ 0, 0 ]
+me = [ 0, 0 ] # [0] actual position, [1] last position
 #behaviors Variables
-trajectoryCounter = 0
+NOT_VISIBLE_DISTANCE = 3 # in m
+TR_2_OA = 0.280 #Region limits to change behavior, Distance in m
+OA_2_TR = 0.300
+OA_2_RA = 0.170
+RA_2_OA = 0.180
+RA_2_S = 0.100
+S_2_RA = 0.110
+
+ZZT = [
+    Pose2D( 0.3, 0.8, 0),
+    Pose2D( 1.4, 2, 0),
+    Pose2D( 1.4, 0.8, 0),
+    Pose2D( 0.3, 2, 0),
+]
 
 def distance( point1, point2 ):  #Computes the distance between two points
     dx = point1.x - point2.x
@@ -62,7 +75,7 @@ def translatePoint( point3D_toTranslate, pose2D ): # point
     return newPoint #point3D
 
 def paintData( info, uid ):
-    FRAME = 'Local_'+str(uid)
+    FRAME = 'Local_'#+str(uid)
     pub = rospy.Publisher( 'local_'+str(uid), MarkerArray, queue_size=10 )
 
     markers = []
@@ -185,33 +198,100 @@ def getInfo( info, uid ):
         robotInfo[0] = info
         pass #do something if i am blind
 
+def closestPoint():  #returns the distance from the actual pose and angle of the closest point, in front of
+    if len( robotInfo[0].obstacles) > 0: #check there are obstacles
+        minimalDistance = robotInfo[0].obstacles[0]
+    else:
+        return NOT_VISIBLE_DISTANCE, 0
+
+    for point in robotInfo[0].obstacles: #for each obstacle
+        obstacleDistance = distance( me[0].pose, point ) #get distance
+        if obstacleDistance < minimalDistance:
+            minimalDistance = obstacleDistance
+            angle = math.atan2( point.y - me[0].pose.y, point.x - me[0].pose.x ) #get the angle of the point
+    return minimalDistance, angle
 # BEHAVIORS
-def obstacle_avoidance():
-    d = 0.20
-    if( me[0] != 0 ):
-        for point in robotInfo[0].obstacles:
-            if distance( me[0].pose, point ) < d:
-                d = distance( me[0].pose, point )
-                alfa = math.atan2( point.y - me[0].pose.y, point.x - me[0].pose.x )
-        ratio = 0.50
-        if d == 0.20:
-            return 0
-        else:
-            return Pose2D( -1*ratio*math.cos(alfa) + me[0].pose.x, -1*ratio*math.sin(alfa) + me[0].pose.y, 0 )
-    return 0
+def run_away():
+    if( me[0] != 0 ): # if actual position known
+        minimalDistance, alfa = closestPoint()
+        if minimalDistance >= RA_2_OA: #if no obstacles
+            setBehavior( "OA" ) #change behavior
+            return obstacle_avoidance()
+        elif minimalDistance <= RA_2_S: #if TOO close
+           setBehavior( "S" ) #change behavior
+           return stop()
+        else: # return a goal at the oposite direction
+            ratio = -1*RA_2_OA # goal from here, in meters
+            return Pose2D( ratio*math.cos(alfa) + me[0].pose.x, ratio*math.sin(alfa) + me[0].pose.y, 0 )
+    else: # if actual position UNknown
+        return 0
 
 def zig_zag_trajectory():
-    arrayOfPoints = [
-        Pose2D( 0.3, 2, 0),
-        Pose2D( 0.3, 0.8, 0),
-        Pose2D( 1.4, 2, 0),
-        Pose2D( 1.4, 0.8, 0),
-    ]
-    if isinstance( me[0], Robot ):
-        if distance( me[0].pose, arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ] ) < CHANGE_GOAL_DISTANCE:
-            global trajectoryCounter
-            trajectoryCounter += 1
-    return arrayOfPoints[ trajectoryCounter % len( arrayOfPoints ) ]
+
+    if( me[0] != 0 ):
+        minimalDistance, alfa = closestPoint()
+        if minimalDistance <= TR_2_OA: #if TOO close
+            setBehavior( "OA" ) #change behavior
+            return obstacle_avoidance()
+        elif distance( me[0].pose, ZZT[0] ) < CHANGE_GOAL_DISTANCE:
+            global ZZT
+            ZZT.insert( 0, ZZT.pop() )
+    return ZZT[0]
+
+def stop():
+    if( me[0] != 0 ): # if actual position known
+        minimalDistance, alfa = closestPoint()
+        if minimalDistance >= S_2_RA: #if no obstacles
+            setBehavior( "RA" ) #change behavior
+            return run_away()
+
+        else: # return a goal at actual position
+            return Pose2D( me[1].pose.x, me[1].pose.y, 0 )
+    else: # if actual position UNknown
+        return 0
+
+def obstacle_avoidance():
+    if( me[0] != 0 ): # if actual position known
+        #verify if goal is acomplished
+        if distance( me[0].pose, ZZT[0] ) < CHANGE_GOAL_DISTANCE:
+            global ZZT
+            ZZT.insert( 0, ZZT.pop() )
+
+        minimalDistance, alfa = closestPoint()
+        if minimalDistance >= OA_2_TR: #if no obstacles
+            setBehavior( "ZZT" ) #change behavior
+            return zig_zag_trajectory()
+        elif minimalDistance <= OA_2_RA: #if TOO close
+            setBehavior( "RA" ) #change behavior
+            return run_away()
+        else: # return a goal perpendicular to the obstacle; if the obstacle is in the goal path
+            ratio = OA_2_TR # run away goal, in meters
+            angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
+            diff = abs( angle - alfa )
+            if diff > math.pi: # verifies that angle is between -pi and pi
+                    diff -= 2*math.pi
+
+            if diff < math.pi/2: # true if osbtacle is in front of the robot
+                #get first posibility
+                angle1 = alfa + math.pi/2
+                if angle1 > math.pi: # verifies that angle is between -pi and pi
+                    angle1 -= 2*math.pi
+                point1 = Pose2D( ratio*math.cos(angle1) + me[0].pose.x, ratio*math.sin(angle1) + me[0].pose.y, 0 )
+                #get second posibility
+                angle2 = alfa - math.pi/2
+                if angle2 < -1*math.pi: # verifies that angle is between -pi and pi
+                    angle2 += 2*math.pi
+                point2 = Pose2D( ratio*math.cos(angle2) + me[0].pose.x, ratio*math.sin(angle2) + me[0].pose.y, 0 )
+                #return the closest to goal
+                if distance( point1, ZZT[0] ) < distance( point2, ZZT[0] ):
+                    return point1
+                else:
+                    return point2
+            else:
+                return Pose2D( ratio*math.cos(angle) + me[0].pose.x, ratio*math.sin(angle) + me[0].pose.y, 0 )
+    else:
+        return 0
+
 
 #END OF BEHAVIORS
 def setBehavior( behav ):
@@ -222,6 +302,8 @@ def setGoal( behavior ):
 
     states = {
         "ZZT": zig_zag_trajectory,
+        "RA": run_away,
+        "S": stop,
         "OA": obstacle_avoidance,
     }
     function = states.get( behavior, obstacle_avoidance )
@@ -242,7 +324,7 @@ def planner():
         if newGoal != 0:
             goalPoint = PointStamped()
             goalPoint.header.stamp = rospy.Time().now()
-            goalPoint.header.frame_id = 'Local_'+str(uid)
+            goalPoint.header.frame_id = 'Local_'#+str(uid)
             goalPoint.point = Point( newGoal.x, newGoal.y, 0 )
             pubGoalPoint.publish( goalPoint )
             pubGoal.publish( newGoal )

@@ -13,9 +13,9 @@ LOST_TIME = 2 #check if lost every 2 seconds
 
 #MAX linear speed
 V_MAX = 0.200 #  m/s
-V_MIN = 0
+V_MIN = 0.002
 # Controllers gains
-D = 0.400 # if error larger than D use V_MAX
+D = 0.200 # if error larger than D use V_MAX
 KP_V = float(V_MAX)/D #for the LinearSpeed
 KI_V = 0
 

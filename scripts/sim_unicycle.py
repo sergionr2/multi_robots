@@ -22,12 +22,12 @@ L = 0.100 # m Distance between wheels
 W_MAX = 6 #rads/s
 W_MIN = 2
 #MAX linear speed
-V_MAX = 4 # rads/s, *R to m/s
+V_MAX = 6 # rads/s, *R to m/s
 V_MIN = 2
 
 KP = 5 #for the angularSpeed
 KI = 0
-D = 0.400 # if error larger than D use V_MAX
+D = 0.200 # if error larger than D use V_MAX
 KP_V = float(V_MAX)/D #for the LinearSpeed
 KI_V = 0
 acumDistance = 0

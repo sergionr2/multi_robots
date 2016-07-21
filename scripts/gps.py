@@ -25,7 +25,7 @@ POSITION_SCALE = Vector3(  0.02, 0.02, 0.1 )
 POSITION_COLOR_ENABLE = ColorRGBA( 170.0/255, 85.0/255, 1, 1 )
 POSITION_COLOR_DISABLED = ColorRGBA( 170.0/255, 85.0/255, 1, A_IF_DISABLED )
 VELOCITY_NS = "Velocity"
-VELOCITY_LENGTH = 3 # n meters for each meter/second
+VELOCITY_LENGTH = 2 # n meters for each meter/second
 VELOCITY_SCALE = Vector3(  0.02, 0.04, 0.04 ) # x diameter, y head diameter, z head length
 VELOCITY_COLOR_ENABLE = ColorRGBA( 1, 170.0/255, 0, 1 )
 VELOCITY_COLOR_DISABLED = ColorRGBA( 1, 170.0/255, 0, A_IF_DISABLED )
@@ -209,7 +209,7 @@ def paintWorld( robots, obstacles, enableds ):
         else:
             m.color = TEXT_COLOR_DISABLED
         m.scale.z = TEXT_SCALE
-        m.text = "ID: " + str( r.id ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),3) )
+        m.text = "ID: " + str( r.id ) + "\nVel: " + str( round(math.sqrt(vel.x**2+vel.y**2),2) )
         cont += 1
         markers.append( m )
     pub.publish( markers )
