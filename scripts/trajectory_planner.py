@@ -40,10 +40,10 @@ robotInfo = [ 0, 0 ] #actual and last information
 me = [ 0, 0 ] # [0] actual position, [1] last position
 #behaviors Variables
 NOT_VISIBLE_DISTANCE = 3 # in m
-TR_2_OA = 0.280 #Region limits to change behavior, Distance in m
-OA_2_TR = 0.300
-OA_2_RA = 0.170
-RA_2_OA = 0.180
+OA_GOAL_RATIO = 0.500 #Region limits to change behavior, Distance in m
+OA_AVOID_RATIO = 0.300
+OA_2_RA = 0.190
+RA_2_OA = 0.200
 RA_2_S = 0.100
 S_2_RA = 0.110
 
@@ -221,7 +221,7 @@ def run_away():
            setBehavior( "S" ) #change behavior
            return stop()
         else: # return a goal at the oposite direction
-            ratio = -1*RA_2_OA # goal from here, in meters
+            ratio = -1.5*RA_2_OA # goal from here, in meters
             return Pose2D( ratio*math.cos(alfa) + me[0].pose.x, ratio*math.sin(alfa) + me[0].pose.y, 0 )
     else: # if actual position UNknown
         return 0
@@ -229,11 +229,7 @@ def run_away():
 def zig_zag_trajectory():
 
     if( me[0] != 0 ):
-        minimalDistance, alfa = closestPoint()
-        if minimalDistance <= TR_2_OA: #if TOO close
-            setBehavior( "OA" ) #change behavior
-            return obstacle_avoidance()
-        elif distance( me[0].pose, ZZT[0] ) < CHANGE_GOAL_DISTANCE:
+        if distance( me[0].pose, ZZT[0] ) < CHANGE_GOAL_DISTANCE:
             global ZZT
             ZZT.insert( 0, ZZT.pop() )
     return ZZT[0]
@@ -258,14 +254,13 @@ def obstacle_avoidance():
             ZZT.insert( 0, ZZT.pop() )
 
         minimalDistance, alfa = closestPoint()
-        if minimalDistance >= OA_2_TR: #if no obstacles
-            setBehavior( "ZZT" ) #change behavior
-            return zig_zag_trajectory()
-        elif minimalDistance <= OA_2_RA: #if TOO close
+        if minimalDistance >= OA_AVOID_RATIO:
+            return ZZT[0]
+        if minimalDistance <= OA_2_RA: #if TOO close
             setBehavior( "RA" ) #change behavior
             return run_away()
         else: # return a goal perpendicular to the obstacle; if the obstacle is in the goal path
-            ratio = OA_2_TR # run away goal, in meters
+            ratio = OA_GOAL_RATIO # run away goal, in meters
             angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
             diff = abs( angle - alfa )
             if diff > math.pi: # verifies that angle is between -pi and pi
@@ -273,6 +268,7 @@ def obstacle_avoidance():
 
             if diff < math.pi/2: # true if osbtacle is in front of the robot
                 #get first posibility
+                ratio /= 3 #to slow the speed
                 angle1 = alfa + math.pi/2
                 if angle1 > math.pi: # verifies that angle is between -pi and pi
                     angle1 -= 2*math.pi
