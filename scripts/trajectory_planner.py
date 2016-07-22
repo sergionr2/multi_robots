@@ -218,11 +218,32 @@ def run_away():
             setBehavior( "OA" ) #change behavior
             return obstacle_avoidance()
         elif minimalDistance <= RA_2_S: #if TOO close
-           setBehavior( "S" ) #change behavior
-           return stop()
-        else: # return a goal at the oposite direction
-            ratio = -1.5*RA_2_OA # goal from here, in meters
-            return Pose2D( ratio*math.cos(alfa) + me[0].pose.x, ratio*math.sin(alfa) + me[0].pose.y, 0 )
+            setBehavior( "S" ) #change behavior
+            return stop()
+        else:
+            ratio = 1.5*RA_2_OA # goal from here, in meters
+            angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
+            diff = abs( angle - alfa )
+            if diff > math.pi: # verifies that angle is between 0 and pi
+                    diff -= math.pi
+            ANGLE_VISION = math.pi/2
+            if diff < ANGLE_VISION: # true if osbtacle is in front of the robot
+                #get first posibility
+                angle1 = alfa + ANGLE_VISION
+                if angle1 > math.pi: # verifies that angle is between -pi and pi
+                    angle1 -= 2*math.pi
+                point1 = Pose2D( ratio*math.cos(angle1) + me[0].pose.x, ratio*math.sin(angle1) + me[0].pose.y, 0 )
+                #get second posibility
+                angle2 = alfa - ANGLE_VISION
+                if angle2 < -1*math.pi: # verifies that angle is between -pi and pi
+                    angle2 += 2*math.pi
+                point2 = Pose2D( ratio*math.cos(angle2) + me[0].pose.x, ratio*math.sin(angle2) + me[0].pose.y, 0 )
+                #return the closest to goal
+                if distance( point1, ZZT[0] ) < distance( point2, ZZT[0] ):
+                    return point1
+                else:
+                    return point2
+
     else: # if actual position UNknown
         return 0
 
@@ -246,7 +267,7 @@ def stop():
     else: # if actual position UNknown
         return 0
 
-def obstacle_avoidance():
+def obstacle_avoidance(): #TODO separate and set a FT following trajectoire 
     if( me[0] != 0 ): # if actual position known
         #verify if goal is acomplished
         if distance( me[0].pose, ZZT[0] ) < CHANGE_GOAL_DISTANCE:
@@ -264,7 +285,7 @@ def obstacle_avoidance():
             angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
             diff = abs( angle - alfa )
             if diff > math.pi: # verifies that angle is between 0 and pi
-                    diff -= math.pi
+                    diff = abs( alfa - angle )
             ANGLE_VISION = math.pi/3
             if diff < ANGLE_VISION: # true if osbtacle is in front of the robot
                 #get first posibility
@@ -317,7 +338,8 @@ def planner():
     global me, robotInfo
     while not rospy.is_shutdown():
         newGoal = setGoal( str( behavior ) )
-        if newGoal != 0:
+        if newGoal != 0 and newGoal != None :
+            print newGoal
             goalPoint = PointStamped()
             goalPoint.header.stamp = rospy.Time().now()
             goalPoint.header.frame_id = 'Local_'#+str(uid)
