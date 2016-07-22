@@ -4,14 +4,16 @@
     <param name="map" value="$(find multi_robots)/map.txt" />
     <param name="default_geom" value="$(find multi_robots)/robotGeometry/default.txt" />
     <param name="noise_amplitud" value="0.001" />
-
+    <!--
     <param name="robot/-1/geom" value="$(find multi_robots)/robotGeometry/border.txt" />
     <param name="robot/-1/x" value="0" />
     <param name="robot/-1/y" value="0" />
     <param name="robot/-1/theta" value="0" />
+  -->
     <param name="robot/6/geom" value="$(find multi_robots)/robotGeometry/robot1.txt" />
     <param name="robot/5/geom" value="$(find multi_robots)/robotGeometry/robot1.txt" />
     <param name="robot/4/geom" value="$(find multi_robots)/robotGeometry/littleBox.txt" />
+    <param name="robot/8/geom" value="$(find multi_robots)/robotGeometry/thimioRobot.txt" />
   </node>
 
   <group>
@@ -19,7 +21,7 @@
     <param name="~id" type="int" value="$(arg n)" />
 
     <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
-      <param name="behavior" type="str" value="ZZT" />
+      <param name="behavior" type="str" value="OA" />
     </node>
 
     <node pkg="multi_robots" name="System_$(arg n)" type="sender.py">
@@ -33,7 +35,7 @@
     <param name="~id" type="int" value="$(arg n)" />
 
     <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
-      <param name="behavior" type="str" value="ZZT" />
+      <param name="behavior" type="str" value="OA" />
     </node>
     <node pkg="multi_robots" name="System_$(arg n)" type="sender.py">
         <param name="port" value="/dev/ttyUSB1" />

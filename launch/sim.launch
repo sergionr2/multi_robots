@@ -4,11 +4,13 @@
     <param name="map" value="$(find multi_robots)/simMap.txt" />
     <param name="default_geom" value="$(find multi_robots)/robotGeometry/default.txt" />
     <param name="noise_amplitud" value="0.001" />
-
+  <!--
     <param name="robot/-1/geom" value="$(find multi_robots)/robotGeometry/border.txt" />
     <param name="robot/-1/x" value="0" />
     <param name="robot/-1/y" value="0" />
     <param name="robot/-1/theta" value="0" />
+  -->
+    <param name="robot/4/geom" value="$(find multi_robots)/robotGeometry/littleBox.txt" />  
     <param name="robot/6/geom" value="$(find multi_robots)/robotGeometry/robot1.txt" />
     <param name="robot/5/geom" value="$(find multi_robots)/robotGeometry/robot1.txt" />
   </node>
@@ -25,6 +27,7 @@
       <param name="theta" value="0" />
     </node>
   </group>
+  <!--
   <group>
     <arg name="n" default="6" />
     <param name="~id" type="int" value="$(arg n)" />
@@ -49,4 +52,5 @@
       <param name="theta" value="0" />
     </node>
   </group>
+-->
 </launch>

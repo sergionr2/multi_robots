@@ -40,12 +40,12 @@ robotInfo = [ 0, 0 ] #actual and last information
 me = [ 0, 0 ] # [0] actual position, [1] last position
 #behaviors Variables
 NOT_VISIBLE_DISTANCE = 3 # in m
-OA_GOAL_RATIO = 0.500 #Region limits to change behavior, Distance in m
-OA_AVOID_RATIO = 0.300
-OA_2_RA = 0.190
-RA_2_OA = 0.200
-RA_2_S = 0.100
-S_2_RA = 0.110
+#Region limits to change behavior, Distance in m
+OA_AVOID_RATIO = 0.500
+OA_2_RA = 0.200
+RA_2_OA = 0.300
+RA_2_S = 0.150
+S_2_RA = 0.170
 
 ZZT = [
     Pose2D( 0.3, 0.8, 0),
@@ -242,7 +242,7 @@ def stop():
             return run_away()
 
         else: # return a goal at actual position
-            return Pose2D( me[1].pose.x, me[1].pose.y, 0 )
+            return Pose2D( me[0].pose.x, me[0].pose.y, 0 )
     else: # if actual position UNknown
         return 0
 
@@ -260,21 +260,21 @@ def obstacle_avoidance():
             setBehavior( "RA" ) #change behavior
             return run_away()
         else: # return a goal perpendicular to the obstacle; if the obstacle is in the goal path
-            ratio = OA_GOAL_RATIO # run away goal, in meters
+            ratio = OA_AVOID_RATIO # run away goal, in meters
             angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
             diff = abs( angle - alfa )
-            if diff > math.pi: # verifies that angle is between -pi and pi
-                    diff -= 2*math.pi
-
-            if diff < math.pi/2: # true if osbtacle is in front of the robot
+            if diff > math.pi: # verifies that angle is between 0 and pi
+                    diff -= math.pi
+            ANGLE_VISION = math.pi/3
+            if diff < ANGLE_VISION: # true if osbtacle is in front of the robot
                 #get first posibility
                 ratio /= 3 #to slow the speed
-                angle1 = alfa + math.pi/2
+                angle1 = alfa + ANGLE_VISION
                 if angle1 > math.pi: # verifies that angle is between -pi and pi
                     angle1 -= 2*math.pi
                 point1 = Pose2D( ratio*math.cos(angle1) + me[0].pose.x, ratio*math.sin(angle1) + me[0].pose.y, 0 )
                 #get second posibility
-                angle2 = alfa - math.pi/2
+                angle2 = alfa - ANGLE_VISION
                 if angle2 < -1*math.pi: # verifies that angle is between -pi and pi
                     angle2 += 2*math.pi
                 point2 = Pose2D( ratio*math.cos(angle2) + me[0].pose.x, ratio*math.sin(angle2) + me[0].pose.y, 0 )
