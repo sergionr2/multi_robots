@@ -314,8 +314,20 @@ def obstacle_avoidance(): #TODO separate and set a FT following trajectoire
                 return Pose2D( ratio*math.cos(angle) + me[0].pose.x, ratio*math.sin(angle) + me[0].pose.y, 0 )
     else:
         return 0
+def rendez_vous():
+    if( me[0] != 0 ): # if actual position known
+        rendez_vous_goal = Pose2D( 0, 0, 0 )
+        for i in robotInfo[0].robots:
+            rendez_vous_goal.x += i.pose.x
+            rendez_vous_goal.y += i.pose.y
+        rendez_vous_goal.x += me[0].pose.x
+        rendez_vous_goal.y += me[0].pose.y
 
-
+        rendez_vous_goal.x /= len( robotInfo[0].robots )+1
+        rendez_vous_goal.y /= len( robotInfo[0].robots )+1
+        return rendez_vous_goal
+    else: # if actual position UNknown
+        return 0
 #END OF BEHAVIORS
 def setBehavior( behav ):
     global behavior
@@ -328,6 +340,7 @@ def setGoal( behavior ):
         "RA": run_away,
         "S": stop,
         "OA": obstacle_avoidance,
+        "RV": rendez_vous,
     }
     function = states.get( behavior, obstacle_avoidance )
     return function()

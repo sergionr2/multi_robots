@@ -1,0 +1,75 @@
+<launch>
+
+  <node pkg="multi_robots" name="Gps" type="gps.py">
+    <param name="map" value="$(find multi_robots)/coopMap.txt" />
+    <param name="default_geom" value="$(find multi_robots)/robotGeometry/default.txt" />
+    <param name="noise_amplitud" value="0.000" />
+    <param name="robot/-3/geom" value="$(find multi_robots)/robotGeometry/border.txt" />
+    <param name="robot/-3/x" value="0" />
+    <param name="robot/-3/y" value="0" />
+    <param name="robot/-3/theta" value="0" />
+  </node>
+
+  <group>
+    <arg name="n" default="1" />
+    <param name="~id" type="int" value="$(arg n)" />
+    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
+      <param name="behavior" type="str" value="RV" />
+    </node>
+    <node pkg="multi_robots" name="System_$(arg n)" type="sim_particle.py">
+      <param name="x" value="0.3" />
+      <param name="y" value="0.3" />
+      <param name="theta" value="0" />
+      <!-- TODO add random posible value to sim
+    -->
+    </node>
+  </group>
+  <group>
+    <arg name="n" default="2" />
+    <param name="~id" type="int" value="$(arg n)" />
+    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
+      <param name="behavior" type="str" value="RV" />
+    </node>
+    <node pkg="multi_robots" name="System_$(arg n)" type="sim_particle.py">
+      <param name="x" value="1.4" />
+      <param name="y" value="0.3" />
+      <param name="theta" value="0" />
+    </node>
+  </group>
+  <group>
+    <arg name="n" default="3" />
+    <param name="~id" type="int" value="$(arg n)" />
+    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
+      <param name="behavior" type="str" value="RV" />
+    </node>
+    <node pkg="multi_robots" name="System_$(arg n)" type="sim_particle.py">
+      <param name="x" value="0.2" />
+      <param name="y" value="1.3" />
+      <param name="theta" value="0" />
+    </node>
+  </group>
+  <group>
+    <arg name="n" default="4" />
+    <param name="~id" type="int" value="$(arg n)" />
+    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
+      <param name="behavior" type="str" value="RV" />
+    </node>
+    <node pkg="multi_robots" name="System_$(arg n)" type="sim_particle.py">
+      <param name="x" value="1.3" />
+      <param name="y" value="0.8" />
+      <param name="theta" value="0" />
+    </node>
+  </group>
+  <group>
+    <arg name="n" default="5" />
+    <param name="~id" type="int" value="$(arg n)" />
+    <node pkg="multi_robots" name="Planner_$(arg n)" type="trajectory_planner.py">
+      <param name="behavior" type="str" value="RV" />
+    </node>
+    <node pkg="multi_robots" name="System_$(arg n)" type="sim_particle.py">
+      <param name="x" value="1.5" />
+      <param name="y" value="2.0" />
+      <param name="theta" value="0" />
+    </node>
+  </group>
+</launch>
