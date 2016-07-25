@@ -41,11 +41,11 @@ me = [ 0, 0 ] # [0] actual position, [1] last position
 #behaviors Variables
 NOT_VISIBLE_DISTANCE = 3 # in m
 #Region limits to change behavior, Distance in m
-OA_AVOID_RATIO = 0.500
-OA_2_RA = 0.200
-RA_2_OA = 0.300
-RA_2_S = 0.150
-S_2_RA = 0.170
+OA_AVOID_RATIO = 0.300
+OA_2_RA = 0.120
+RA_2_OA = 0.130
+RA_2_S = 0.040
+S_2_RA = 0.060
 
 ZZT = [
     Pose2D( 0.3, 0.8, 0),
@@ -202,18 +202,22 @@ def closestPoint():  #returns the distance from the actual pose and angle of the
     if len( robotInfo[0].obstacles) > 0: #check there are obstacles
         minimalDistance = robotInfo[0].obstacles[0]
     else:
-        return NOT_VISIBLE_DISTANCE, 0
+        return NOT_VISIBLE_DISTANCE, 0, 0
 
-    for point in robotInfo[0].obstacles: #for each obstacle
-        obstacleDistance = distance( me[0].pose, point ) #get distance
-        if obstacleDistance < minimalDistance:
-            minimalDistance = obstacleDistance
-            angle = math.atan2( point.y - me[0].pose.y, point.x - me[0].pose.x ) #get the angle of the point
-    return minimalDistance, angle
+    geometryPoints = [ translatePoint( p, me[0].pose ) for p in me[0].geometry ]
+
+    for obstaclePoint in robotInfo[0].obstacles: #for each obstacle
+        for point in geometryPoints: #for each point in robot geometry
+            obstacleDistance = distance( point, obstaclePoint ) #get distance
+            if obstacleDistance < minimalDistance:
+                obst = obstaclePoint
+                minimalDistance = obstacleDistance
+                angle = math.atan2( obstaclePoint.y - me[0].pose.y, obstaclePoint.x - me[0].pose.x ) #get the direction of the point
+    return minimalDistance, angle, obst
 # BEHAVIORS
 def run_away():
     if( me[0] != 0 ): # if actual position known
-        minimalDistance, alfa = closestPoint()
+        minimalDistance, alfa, obstacle = closestPoint()
         if minimalDistance >= RA_2_OA: #if no obstacles
             setBehavior( "OA" ) #change behavior
             return obstacle_avoidance()
@@ -221,20 +225,20 @@ def run_away():
             setBehavior( "S" ) #change behavior
             return stop()
         else:
-            ratio = 1.5*RA_2_OA # goal from here, in meters
+            ratio = RA_2_OA # goal from here, in meters
             angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
             diff = abs( angle - alfa )
             if diff > math.pi: # verifies that angle is between 0 and pi
-                    diff -= math.pi
-            ANGLE_VISION = math.pi/2
+                    diff = abs( alfa - angle )
+            ANGLE_VISION = math.pi/3
             if diff < ANGLE_VISION: # true if osbtacle is in front of the robot
                 #get first posibility
-                angle1 = alfa + ANGLE_VISION
+                angle1 = alfa + math.pi/3
                 if angle1 > math.pi: # verifies that angle is between -pi and pi
                     angle1 -= 2*math.pi
                 point1 = Pose2D( ratio*math.cos(angle1) + me[0].pose.x, ratio*math.sin(angle1) + me[0].pose.y, 0 )
                 #get second posibility
-                angle2 = alfa - ANGLE_VISION
+                angle2 = alfa - math.pi/3
                 if angle2 < -1*math.pi: # verifies that angle is between -pi and pi
                     angle2 += 2*math.pi
                 point2 = Pose2D( ratio*math.cos(angle2) + me[0].pose.x, ratio*math.sin(angle2) + me[0].pose.y, 0 )
@@ -243,7 +247,9 @@ def run_away():
                     return point1
                 else:
                     return point2
-
+            else:
+                ratio *= 2
+                return Pose2D( ratio*math.cos(angle) + me[0].pose.x, ratio*math.sin(angle) + me[0].pose.y, 0 )
     else: # if actual position UNknown
         return 0
 
@@ -257,7 +263,7 @@ def zig_zag_trajectory():
 
 def stop():
     if( me[0] != 0 ): # if actual position known
-        minimalDistance, alfa = closestPoint()
+        minimalDistance, alfa, obstacle  = closestPoint()
         if minimalDistance >= S_2_RA: #if no obstacles
             setBehavior( "RA" ) #change behavior
             return run_away()
@@ -267,14 +273,14 @@ def stop():
     else: # if actual position UNknown
         return 0
 
-def obstacle_avoidance(): #TODO separate and set a FT following trajectoire 
+def obstacle_avoidance(): #TODO separate and set a FT following trajectoire
     if( me[0] != 0 ): # if actual position known
         #verify if goal is acomplished
         if distance( me[0].pose, ZZT[0] ) < CHANGE_GOAL_DISTANCE:
             global ZZT
             ZZT.insert( 0, ZZT.pop() )
 
-        minimalDistance, alfa = closestPoint()
+        minimalDistance, alfa, obstacle = closestPoint()
         if minimalDistance >= OA_AVOID_RATIO:
             return ZZT[0]
         if minimalDistance <= OA_2_RA: #if TOO close
@@ -289,7 +295,7 @@ def obstacle_avoidance(): #TODO separate and set a FT following trajectoire
             ANGLE_VISION = math.pi/3
             if diff < ANGLE_VISION: # true if osbtacle is in front of the robot
                 #get first posibility
-                ratio /= 3 #to slow the speed
+                #ratio /=  #to slow the speed
                 angle1 = alfa + ANGLE_VISION
                 if angle1 > math.pi: # verifies that angle is between -pi and pi
                     angle1 -= 2*math.pi
