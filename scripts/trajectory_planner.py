@@ -27,9 +27,14 @@ TEXT_NS = "Text"
 TEXT_SCALE = 0.1
 TEXT_COLOR = ColorRGBA( 1, 1, 1, 1 )
 TRAJECTORY_NS = "Trajectory"
-TRAJECTORY_SCALE = Vector3( 0.01, 0.01, 0.01 )
+TRAJECTORY_SCALE = Vector3( 0.008, 0.008, 0.008 )
 TRAJECTORY_COLOR = ColorRGBA( 1, 65.0/255 , 90.0/255, 0.7 )
 NUMBER_OF_LAST_POSES = 300
+VISION_AREA_NS = "Vision_Area"
+VISION_AREA_SCALE = Vector3( 0.01, 0.01, 0.01 )
+VISION_AREA_COLOR = ColorRGBA( 1, 170.0/255 , 1, 0.7 )
+angle_of_vision = 0
+ratio_of_vision = 0
 
 SAVE_TO_TRAJECTORY_DISTANCE = 0.01
 CHANGE_GOAL_DISTANCE = 0.06
@@ -53,6 +58,22 @@ ZZT = [
     Pose2D( 1.4, 0.8, 0),
     Pose2D( 0.3, 2, 0),
 ]
+def getArc( angle, ratio  ):
+    rospy.loginfo( str(ratio) )
+    ratio*=2 #TODO fixe
+    angle = int( angle/math.pi*180 )
+    rospy.loginfo( 'angle ' +str(angle) )
+    step =  10 # degrees
+    arc = []
+    for theta in range( -1*angle , angle + step, step ):
+        arc.append( Point( ratio*math.cos( theta*math.pi/180 ), ratio*math.sin( theta*math.pi/180 ), 0 ) )
+    arc.insert( 0, Point( 0, 0, 0) )
+    arc.append( Point( 0, 0, 0) )
+    pose = me[0].pose
+    pose.theta += math.pi/2
+    if pose.theta > math.pi:
+        pose.theta -= math.pi*2
+    return [ translatePoint( p, pose ) for p in arc ]
 
 def distance( point1, point2 ):  #Computes the distance between two points
     dx = point1.x - point2.x
@@ -106,6 +127,18 @@ def paintData( info, uid ):
     m.color = TRAJECTORY_COLOR
     m.scale = TRAJECTORY_SCALE
     m.points = [ Point( p.x, p.y, 0 ) for p in lastPoses ]
+    cont += 1
+    markers.append( m )
+
+    m = Marker()
+    m.header.frame_id = FRAME
+    m.ns = VISION_AREA_NS
+    m.id = cont
+    m.type = m.LINE_STRIP
+    m.action = 0 # Add/Modify
+    m.color = VISION_AREA_COLOR
+    m.scale = VISION_AREA_SCALE
+    m.points = getArc( angle_of_vision , ratio_of_vision )
     cont += 1
     markers.append( m )
 
@@ -170,7 +203,8 @@ def paintData( info, uid ):
     pub.publish( markers )
 
 def getInfo( info, uid ):
-    paintData( info, uid )
+    if( me[0] != 0 ): # if actual position known
+        paintData( info, uid )
     canISeeMe = False
     global me, robotInfo
     #get relevant information, me, info, and lastPose
@@ -225,13 +259,16 @@ def run_away():
             setBehavior( "S" ) #change behavior
             return stop()
         else:
+            global ratio_of_vision
+            ratio_of_vision = RA_2_OA
             ratio = RA_2_OA # goal from here, in meters
             angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
             diff = abs( angle - alfa )
             if diff > math.pi: # verifies that angle is between 0 and pi
                     diff = abs( alfa - angle )
-            ANGLE_VISION = math.pi/3
-            if diff < ANGLE_VISION: # true if osbtacle is in front of the robot
+            global angle_of_vision
+            angle_of_vision = math.pi/2
+            if diff < angle_of_vision: # true if osbtacle is in front of the robot
                 #get first posibility
                 angle1 = alfa + math.pi/3
                 if angle1 > math.pi: # verifies that angle is between -pi and pi
@@ -263,6 +300,10 @@ def zig_zag_trajectory():
 
 def stop():
     if( me[0] != 0 ): # if actual position known
+        global ratio_of_vision
+        ratio_of_vision = S_2_RA
+        global angle_of_vision
+        angle_of_vision = math.pi
         minimalDistance, alfa, obstacle  = closestPoint()
         if minimalDistance >= S_2_RA: #if no obstacles
             setBehavior( "RA" ) #change behavior
@@ -287,21 +328,24 @@ def obstacle_avoidance(): #TODO separate and set a FT following trajectoire
             setBehavior( "RA" ) #change behavior
             return run_away()
         else: # return a goal perpendicular to the obstacle; if the obstacle is in the goal path
-            ratio = OA_AVOID_RATIO # run away goal, in meters
+            global ratio_of_vision
+            ratio_of_vision = OA_AVOID_RATIO # goal from here, in meters
+            ratio = ratio_of_vision
             angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
             diff = abs( angle - alfa )
             if diff > math.pi: # verifies that angle is between 0 and pi
                     diff = abs( alfa - angle )
-            ANGLE_VISION = math.pi/3
-            if diff < ANGLE_VISION: # true if osbtacle is in front of the robot
+            global angle_of_vision
+            angle_of_vision = math.pi/3
+            if diff < angle_of_vision: # true if osbtacle is in front of the robot
                 #get first posibility
                 #ratio /=  #to slow the speed
-                angle1 = alfa + ANGLE_VISION
+                angle1 = alfa + angle_of_vision
                 if angle1 > math.pi: # verifies that angle is between -pi and pi
                     angle1 -= 2*math.pi
                 point1 = Pose2D( ratio*math.cos(angle1) + me[0].pose.x, ratio*math.sin(angle1) + me[0].pose.y, 0 )
                 #get second posibility
-                angle2 = alfa - ANGLE_VISION
+                angle2 = alfa - angle_of_vision
                 if angle2 < -1*math.pi: # verifies that angle is between -pi and pi
                     angle2 += 2*math.pi
                 point2 = Pose2D( ratio*math.cos(angle2) + me[0].pose.x, ratio*math.sin(angle2) + me[0].pose.y, 0 )
