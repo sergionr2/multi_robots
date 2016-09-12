@@ -33,13 +33,72 @@ NUMBER_OF_LAST_POSES = 300
 VISION_AREA_NS = "Vision_Area"
 VISION_AREA_SCALE = Vector3( 0.01, 0.01, 0.01 )
 VISION_AREA_COLOR = ColorRGBA( 1, 170.0/255 , 1, 0.7 )
-angle_of_vision = 0
-ratio_of_vision = 0
+
+PLANED_TRAJECTORY_NS = "Planed_Trajectory"
+PLANED_TRAJECTORY_WIDTH =  0.020
+PLANED_TRAJECTORY_COLOR = ColorRGBA( 85.0/255, 85.0/255, 1, 0.8 )
+PLANED_TRAJECTORY_LINE_LEN = 0.200
+
+PLANED_FIRST_SCALE = Vector3( 0.05, 0.05, 0.05 )
+PLANED_FIRST_COLOR = ColorRGBA( 85.0/255, 1, 0, 1 )
+
+FT = [ #Point( 0.01*x, 0.01*x, 0) for x in range(0,12) ] # to follow trajectory
+    Pose2D( 0.3, 0.8, 0),
+    Pose2D( 1.4, 2, 0),
+    Pose2D( 1.4, 0.8, 0),
+    Pose2D( 0.3, 2, 0),
+]
+
+def bound( n ): # values must be in [0-1] interval
+    if n <= 1 and n >= 0:
+        return n
+    if n > 1:
+        return 1
+    if n < 0:
+        return 0
+
+def get_FT_Color():
+    color = []
+    r = 1
+    g = 0
+    b = 0
+    a = 1
+    dx = 6.0/len(FT)
+    da = -1.0/len(FT)
+    deltaColor = {
+        0: [ 0, dx, 0 ], #r,g,b
+        1: [ -dx, 0, 0 ], #r,g,b
+        2: [ 0, 0, dx ], #r,g,b
+        3: [ 0, -dx, 0 ], #r,g,b
+        4: [ dx, 0, 0 ], #r,g,b
+        5: [ 0, 0, -dx ], #r,g,b
+    }
+    for i in range( 0,len(FT) ):
+        color.append( ColorRGBA( bound(r), bound(g), bound(b), bound(a) ) )
+        if len(FT) >= 12:
+            key = 6*i/len(FT)
+            r += deltaColor[ key ][0]
+            g += deltaColor[ key ][1]
+            b += deltaColor[ key ][2]
+        else:
+            r = FOLLOW_TRAJECTORY_COLOR_LOW_NUMBER.r
+            g = FOLLOW_TRAJECTORY_COLOR_LOW_NUMBER.g
+            b = FOLLOW_TRAJECTORY_COLOR_LOW_NUMBER.b
+        a = a + da
+    return color
+
+FOLLOW_TRAJECTORY_NS = "Follow_Trajectory"
+FOLLOW_TRAJECTORY_SCALE = Vector3( 0.05, 0.05, 0.05 )
+FOLLOW_TRAJECTORY_COLOR_LOW_NUMBER = ColorRGBA( 1, 1, 1, 1 ) #if less than 12 positions
+FOLLOW_TRAJECTORY_COLOR = get_FT_Color()
+
+lastPoses = [] # for painting the Trajectory
+angle_of_vision = 0 # for painting the Vision_Area
+ratio_of_vision = 0 # for painting the Vision_Area
 
 SAVE_TO_TRAJECTORY_DISTANCE = 0.01
 CHANGE_GOAL_DISTANCE = 0.06
 HZ = 5 #frecuence of publish
-lastPoses = []
 behavior = "OA"
 robotInfo = [ 0, 0 ] #actual and last information
 me = [ 0, 0 ] # [0] actual position, [1] last position
@@ -58,11 +117,14 @@ ZZT = [
     Pose2D( 1.4, 0.8, 0),
     Pose2D( 0.3, 2, 0),
 ]
+
+PT = [] # planed trajectory
+
 def getArc( angle, ratio  ):
-    rospy.loginfo( str(ratio) )
-    ratio*=2 #TODO fixe
+    #rospy.loginfo( str(ratio) )
+    ratio*=2 #FIXME, is not an real representative arc of visual points taked into acount
     angle = int( angle/math.pi*180 )
-    rospy.loginfo( 'angle ' +str(angle) )
+    #rospy.loginfo( 'angle ' +str(angle) )
     step =  10 # degrees
     arc = []
     for theta in range( -1*angle , angle + step, step ):
@@ -80,6 +142,20 @@ def distance( point1, point2 ):  #Computes the distance between two points
     dy = point1.y - point2.y
     return math.sqrt( dx**2 + dy**2 )
 
+def rotatePoint( pointToRotate, angle, frame ):
+
+    x = pointToRotate.x
+    y = pointToRotate.y
+
+    x0 = frame.x
+    y0 = frame.y
+    newPoint = Pose2D( 0, 0, 0 )
+    #rotate
+    newPoint.x = (x-x0)*math.cos( angle  ) - (y-y0)*math.sin( angle ) + x0
+    newPoint.y = (x-x0)*math.sin( angle  ) + (y-y0)*math.cos( angle ) + y0
+
+    return newPoint #pose2D
+
 def translatePoint( point3D_toTranslate, pose2D ): # point
     x = point3D_toTranslate.x
     y = point3D_toTranslate.y
@@ -96,7 +172,7 @@ def translatePoint( point3D_toTranslate, pose2D ): # point
     return newPoint #point3D
 
 def paintData( info, uid ):
-    FRAME = 'Local_'#+str(uid)
+    FRAME = 'Local'#+str(uid)
     pub = rospy.Publisher( 'local_'+str(uid), MarkerArray, queue_size=10 )
 
     markers = []
@@ -141,6 +217,55 @@ def paintData( info, uid ):
     m.points = getArc( angle_of_vision , ratio_of_vision )
     cont += 1
     markers.append( m )
+
+    if len(PT) > 0:
+        planed = list( PT )
+        first = planed.pop(0)
+
+        m = Marker()
+        m.header.frame_id = FRAME
+        m.ns = PLANED_TRAJECTORY_NS
+        m.id = cont
+        m.type = m.SPHERE
+        m.action = 0 # Add/Modify
+        m.color = PLANED_FIRST_COLOR
+        m.scale = PLANED_FIRST_SCALE
+        m.pose.position = Point( first.x, first.y, 0 )
+        cont += 1
+        markers.append( m )
+
+        m = Marker()
+        m.header.frame_id = FRAME
+        m.ns = PLANED_TRAJECTORY_NS
+        m.id = cont
+        m.type = m.LINE_LIST
+        m.action = 0 # Add/Modify
+        m.color = PLANED_TRAJECTORY_COLOR
+        m.scale.x = PLANED_TRAJECTORY_WIDTH
+        lines = []
+        for p in planed:
+            lines.append( Point( p.x, p.y, 0 ) )
+            point = Point( p.x, p.y, PLANED_TRAJECTORY_LINE_LEN )
+            lines.append( point )
+        m.points = lines
+        cont += 1
+        markers.append( m )
+
+    if len(FT) > 0:
+        m = Marker()
+        m.header.frame_id = FRAME
+        m.ns = FOLLOW_TRAJECTORY_NS
+        m.id = cont
+        m.type = m.CUBE_LIST
+        m.action = 0 # Add/Modify
+        m.colors = FOLLOW_TRAJECTORY_COLOR
+        m.scale = FOLLOW_TRAJECTORY_SCALE
+        lines = []
+        for p in FT:
+            lines.append( Point( p.x, p.y, 0 ) )
+        m.points = lines
+        cont += 1
+        markers.append( m )
 
     for r in info.robots:
         m = Marker()
@@ -248,27 +373,77 @@ def closestPoint():  #returns the distance from the actual pose and angle of the
                 minimalDistance = obstacleDistance
                 angle = math.atan2( obstaclePoint.y - me[0].pose.y, obstaclePoint.x - me[0].pose.x ) #get the direction of the point
     return minimalDistance, angle, obst
+
+def getObstaclesIn( ratio ): # return obstacles in a ratio from me, TODO add also visible robot geometries
+    l = []
+    for obstacle in robotInfo[0].obstacles: #for each obstacle
+        if distance( obstacle, me[0].pose ) < ratio: # TODO make it dependent of robot geometry
+            l.append( obstacle )
+    return l
+
+def checkTurningObstacles( goal ):
+
+    goalAngle = math.atan2( goal.y - me[0].pose.y, goal.x - me[0].pose.x ) #get the angle to the goal
+    #print  "Goal Angle ", goalAngle
+    step = 10
+    diff = math.pi/2 + me[0].pose.theta - goalAngle # + pi/2 because of the frame of robot. it moves forward in y axis
+    while diff > math.pi:
+        diff -= 2*math.pi
+    while diff < -1*math.pi:
+        diff += 2*math.pi
+    if diff > 0 : # if i have to turn clock wise
+        step *= -1
+    #print "diff", diff*180/math.pi
+
+    obstacles = getObstaclesIn( 1.5*RA_2_OA ) # TODO make ratio dependent of robot geometry
+    dtheta = 0
+    while abs( dtheta ) < abs( diff ):
+        newPose = Pose2D( me[0].pose.x, me[0].pose.y, me[0].pose.theta )
+        newPose.theta += dtheta
+        geometryPoints = [ translatePoint( p, newPose ) for p in me[0].geometry ] # translate geometries
+        for p in geometryPoints:
+            for o in obstacles:
+                if distance( p, o ) <= RA_2_S:
+                    maxDTheta = -1*( goalAngle - 60*math.pi/180 )
+                    print "enter"
+
+                    newGoal = rotatePoint( goal, maxDTheta, me[0].pose )
+                    return newGoal
+        dtheta += step * math.pi/180
+    return goal
+
 # BEHAVIORS
 def run_away():
     if( me[0] != 0 ): # if actual position known
+        if distance( me[0].pose, PT[0] ) < 2*CHANGE_GOAL_DISTANCE:
+            global PT
+            PT.pop(0)
+            return 0
+        elif distance( me[0].pose, PT[1] )*2/3 < distance( me[0].pose, PT[0] ):
+            global PT
+            PT.pop(0)
+
         minimalDistance, alfa, obstacle = closestPoint()
         if minimalDistance >= RA_2_OA: #if no obstacles
             setBehavior( "OA" ) #change behavior
-            return obstacle_avoidance()
-        elif minimalDistance <= RA_2_S: #if TOO close
+            return 0
+        elif minimalDistance <= RA_2_S and abs(alfa - me[0].pose.theta) < math.pi/2 : #if TOO close
             setBehavior( "S" ) #change behavior
             return stop()
         else:
             global ratio_of_vision
             ratio_of_vision = RA_2_OA
             ratio = RA_2_OA # goal from here, in meters
-            angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
-            diff = abs( angle - alfa )
+            angle = math.atan2( PT[0].y - me[0].pose.y, PT[0].x - me[0].pose.x ) #get the angle to the goal
+
+            diff = abs( me[0].pose.theta + math.pi/2 - alfa )
             if diff > math.pi: # verifies that angle is between 0 and pi
-                    diff = abs( alfa - angle )
+                diff -= 2*math.pi
+                diff = abs(diff)
+
             global angle_of_vision
-            angle_of_vision = math.pi/2
-            if diff < angle_of_vision: # true if osbtacle is in front of the robot
+            angle_of_vision = math.pi*3/8
+            if diff < angle_of_vision : # true if osbtacle is in front of the robot
                 #get first posibility
                 angle1 = alfa + math.pi/3
                 if angle1 > math.pi: # verifies that angle is between -pi and pi
@@ -280,10 +455,12 @@ def run_away():
                     angle2 += 2*math.pi
                 point2 = Pose2D( ratio*math.cos(angle2) + me[0].pose.x, ratio*math.sin(angle2) + me[0].pose.y, 0 )
                 #return the closest to goal
-                if distance( point1, ZZT[0] ) < distance( point2, ZZT[0] ):
-                    return point1
+                pointToReturn = 0
+                if distance( point1, PT[0] ) < distance( point2, PT[0] ):
+                    pointToReturn = checkTurningObstacles( point1 ) #takes the goal and returns a goal with an angle closest to the goal without obstacles
                 else:
-                    return point2
+                    pointToReturn = checkTurningObstacles( point2 )
+                return pointToReturn
             else:
                 ratio *= 2
                 return Pose2D( ratio*math.cos(angle) + me[0].pose.x, ratio*math.sin(angle) + me[0].pose.y, 0 )
@@ -293,9 +470,9 @@ def run_away():
 def zig_zag_trajectory():
 
     if( me[0] != 0 ):
-        if distance( me[0].pose, ZZT[0] ) < CHANGE_GOAL_DISTANCE:
+        if distance( me[0].pose, ZZT[0] ) < 2*CHANGE_GOAL_DISTANCE:
             global ZZT
-            ZZT.insert( 0, ZZT.pop() )
+            ZZT.insert( 0, ZZT.pop() ) # FIXME
     return ZZT[0]
 
 def stop():
@@ -304,39 +481,55 @@ def stop():
         ratio_of_vision = S_2_RA
         global angle_of_vision
         angle_of_vision = math.pi
+
         minimalDistance, alfa, obstacle  = closestPoint()
-        if minimalDistance >= S_2_RA: #if no obstacles
+        if len( FT ) == 0:
+            return Pose2D( me[0].pose.x, me[0].pose.y, 0 ) # return a goal at actual position
+        elif minimalDistance >= S_2_RA: #if no obstacles
             setBehavior( "RA" ) #change behavior
             return run_away()
-
         else: # return a goal at actual position
             return Pose2D( me[0].pose.x, me[0].pose.y, 0 )
     else: # if actual position UNknown
         return 0
 
-def obstacle_avoidance(): #TODO separate and set a FT following trajectoire
+def obstacle_avoidance():
     if( me[0] != 0 ): # if actual position known
         #verify if goal is acomplished
-        if distance( me[0].pose, ZZT[0] ) < CHANGE_GOAL_DISTANCE:
-            global ZZT
-            ZZT.insert( 0, ZZT.pop() )
+        if distance( me[0].pose, PT[0] ) < 2*CHANGE_GOAL_DISTANCE:
+            global PT
+            PT.pop(0)
+        elif distance( me[0].pose, PT[1] ) < distance( me[0].pose, PT[0] ):
+            global PT
+            PT.pop(0)
+            #print "yes"
 
         minimalDistance, alfa, obstacle = closestPoint()
         if minimalDistance >= OA_AVOID_RATIO:
-            return ZZT[0]
+            if len(PT) > 1:
+                return Pose2D ( PT[ 1 ].x, PT[ 1 ].y, 0 )
+            else:
+                return Pose2D ( PT[ 0 ].x, PT[ 0 ].y, 0 )
+
         if minimalDistance <= OA_2_RA: #if TOO close
             setBehavior( "RA" ) #change behavior
-            return run_away()
+            return 0
         else: # return a goal perpendicular to the obstacle; if the obstacle is in the goal path
             global ratio_of_vision
             ratio_of_vision = OA_AVOID_RATIO # goal from here, in meters
             ratio = ratio_of_vision
-            angle = math.atan2( ZZT[0].y - me[0].pose.y, ZZT[0].x - me[0].pose.x ) #get the angle to the goal
-            diff = abs( angle - alfa )
+            if len(PT) > 1: # To go faster if there are other targets in path
+                angle = math.atan2( PT[1].y - me[0].pose.y, PT[1].x - me[0].pose.x ) #get the angle to the goal
+            else:
+                angle = math.atan2( PT[0].y - me[0].pose.y, PT[0].x - me[0].pose.x ) #get the angle to the goal
+
+            diff = abs( me[0].pose.theta + math.pi/2 - alfa )
             if diff > math.pi: # verifies that angle is between 0 and pi
-                    diff = abs( alfa - angle )
+                diff -= 2*math.pi
+                diff = abs(diff)
+
             global angle_of_vision
-            angle_of_vision = math.pi/3
+            angle_of_vision = 50*math.pi/180
             if diff < angle_of_vision: # true if osbtacle is in front of the robot
                 #get first posibility
                 #ratio /=  #to slow the speed
@@ -350,7 +543,10 @@ def obstacle_avoidance(): #TODO separate and set a FT following trajectoire
                     angle2 += 2*math.pi
                 point2 = Pose2D( ratio*math.cos(angle2) + me[0].pose.x, ratio*math.sin(angle2) + me[0].pose.y, 0 )
                 #return the closest to goal
-                if distance( point1, ZZT[0] ) < distance( point2, ZZT[0] ):
+                index = 0
+                if len(PT) > 1: # To go faster if there are other targets in path
+                    index = 1
+                if distance( point1, PT[index] ) < distance( point2, PT[index] ):
                     return point1
                 else:
                     return point2
@@ -373,20 +569,189 @@ def rendez_vous():
     else: # if actual position UNknown
         return 0
 #END OF BEHAVIORS
+
+def getCenterOfCell( row, column, SIZE, N_ROWS, N_COLUMNS  ):
+    #get cell centre
+    pX = me[0].pose.x + (column - N_COLUMNS/2)*SIZE
+    pY = me[0].pose.y + (row - N_ROWS/2)*SIZE
+    return Point( pX, pY, 0 )
+
+
+def isOcupied( row, column, SIZE, N_ROWS, N_COLUMNS ):
+    #already checked for me[0]
+    #get cell centre
+    p = getCenterOfCell( row, column, SIZE, N_ROWS, N_COLUMNS  )
+    #get corners
+    right = p.x + SIZE/2
+    up = p.y + SIZE/2
+    left = p.x - SIZE/2
+    down = p.y - SIZE/2
+    #verify all posible points and return
+    for point in robotInfo[0].obstacles: # check in obstacles
+        if left < point.x and point.x < right:
+            if down < point.y and point.y < up:
+                return True
+    for robot in robotInfo[0].robots: #check in robots
+        if left < robot.pose.x and robot.pose.x < right:
+            if down < robot.pose.y and robot.pose.y < up:
+                return True
+    return False
+
+def isPathBlocked():
+    CHECK_DISTANCE = 0.100
+    for p in PT:
+        for point in robotInfo[0].obstacles: # check in obstacles
+            if distance( point, p ) < CHECK_DISTANCE :
+                return True
+        for robot in robotInfo[0].robots: #check in robots
+            if distance( robot.pose , p  ) < CHECK_DISTANCE and robot != me[0] :
+                return True
+    return False
+
+def isGoalAchieved( row, column, SIZE, N_ROWS, N_COLUMNS ):
+    #already checked for me[0]
+    #get cell centre
+    p = getCenterOfCell( row, column, SIZE, N_ROWS, N_COLUMNS  )
+    #get corners
+    right = p.x + SIZE/2
+    up = p.y + SIZE/2
+    left = p.x - SIZE/2
+    down = p.y - SIZE/2
+    #verify all posible points and return
+    if left < FT[0].x and FT[0].x < right:
+        if down < FT[0].y and FT[0].y < up:
+            return True
+    return False
+
+def inGridBounds( i, j, N_ROWS, N_COLUMNS ):
+    if 0 <= i and i <  N_ROWS:
+        if 0 <= j and j < N_COLUMNS:
+            return True
+    return False
+
+directions = [
+    [ 1, 0 ], # up
+    [ -1, 0 ], # down
+    [ 0, 1 ], # righ
+    [ 0, -1 ], # left
+    [ 1, 1 ], # up right
+    [ -1, 1 ], # down right
+    [ -1, -1 ], # down left
+    [ 1, -1 ], # up left
+]
+
+def getPath( grid, goalIndex, SIZE, N_ROWS, N_COLUMNS  ):
+    i, j = goalIndex
+    point = getCenterOfCell( i, j, SIZE, N_ROWS, N_COLUMNS )
+    value = grid[i][j]
+    #print value
+    if value == 0:
+        #path = [ getCenterOfCell(i, j, SIZE, N_ROWS, N_COLUMNS) ]
+        path = []
+        return path
+    else:
+        for index in directions:
+            di, dj = index
+            if inGridBounds( i+di, j+dj, N_ROWS, N_COLUMNS ):
+                if grid[i+di][j+dj] == value - 1:
+                    path = getPath( grid, [ i+di, j+dj ], SIZE, N_ROWS, N_COLUMNS  )
+                    path.append(point)
+                    return path
+
+def doPlanning():
+    GRID_SIZE = 11
+    ROWS = GRID_SIZE
+    COLUMNS = GRID_SIZE
+    CELL_LEN = 0.120 + 2*RA_2_S # meters #TODO select dinamic
+
+    if( me[0] != 0 ): # if actual position known
+    #verify if goal is acomplished
+        if distance( me[0].pose, FT[0] ) < CHANGE_GOAL_DISTANCE:
+            global FT
+            FT.insert( 0, FT.pop() ) # FIXME tmp
+            #FT.pop(0)
+            doPlanning()
+        else:
+            grid = [[-2 for x in range(COLUMNS)] for y in range(ROWS)]
+            # put -1 if there are obstacles in the grid
+            for i in range( ROWS ):
+                for j in range( COLUMNS ):
+                    if isOcupied( i, j, CELL_LEN, ROWS, COLUMNS ):
+                        grid[i][j] = -1
+            # Solve the grid
+            # assure that algorithm starts even if theres an obstacle in the initial cell
+            grid[ROWS/2][COLUMNS/2] = -2
+            stackOld = [] # to pop indices
+            stackOld.append( [ROWS/2, COLUMNS/2] )
+            stackNew = [] # to push indices
+            counter = 0
+
+            goalIndex = []
+            while len(stackOld) != 0:
+                while len(stackOld) != 0:
+                    i, j = stackOld.pop()
+                    if isGoalAchieved( i, j, CELL_LEN, ROWS, COLUMNS ):
+                        grid[i][j] = counter
+                        stackOld = []
+                        stackNew = []
+                        goalIndex = [ i, j ]
+                    if( grid[i][j] == -2 ):
+                        grid[i][j] = counter
+                        for index in directions:
+                            di, dj = index
+                            if inGridBounds( i+di, j+dj, ROWS, COLUMNS ):
+                                stackNew.append( [i+di, j+dj] )
+                counter += 1
+                stackOld = stackNew
+                stackNew = []
+            # select a trajectory
+            #print grid
+            path = []
+            if len( goalIndex ) == 2: # goal reached
+                #get shortest path
+                path = getPath( grid, goalIndex, CELL_LEN, ROWS, COLUMNS )
+            else:
+                #find closest point diferent from -1 and get shortest path
+                p = getCenterOfCell( 0, 0, CELL_LEN, ROWS, COLUMNS )
+                minDistancePoint = p
+                minDistance = distance( FT[0], minDistancePoint ) + 1
+                pointIndex = 0
+
+                for i in range(ROWS):
+                    for j in range(COLUMNS):
+                        if grid[i][j] != -1:
+                            center = getCenterOfCell( i, j, CELL_LEN, ROWS, COLUMNS )
+                            if distance( center, FT[0] ) < minDistance:
+                                minDistancePoint = center
+                                minDistance = distance( center, FT[0] )
+                                pointIndex = [ i, j ]
+
+                path = getPath( grid, pointIndex, CELL_LEN, ROWS, COLUMNS  )
+            #asign the computed path
+            if len(path) <= 1:
+                path.append( FT[0] )
+                path.append( FT[0] )
+            global PT
+            PT = path
+
 def setBehavior( behav ):
     global behavior
     behavior = behav
 
 def setGoal( behavior ):
-
     states = {
-        "ZZT": zig_zag_trajectory,
-        "RA": run_away,
-        "S": stop,
-        "OA": obstacle_avoidance,
         "RV": rendez_vous,
+        "ZZT": zig_zag_trajectory,
+        "OA": obstacle_avoidance,
+        "RA": run_away, #FIXME change to slow_OA
+        "S": stop,
     }
-    function = states.get( behavior, obstacle_avoidance )
+    if len( FT ) == 0: # if there are no goals, do nothing
+        return stop()
+    elif behavior == "OA" or behavior == "RA":
+        if len(PT) < 2 or isPathBlocked():
+            doPlanning()
+    function = states.get( behavior, obstacle_avoidance ) #if behavior not in states, return OA
     return function()
 
 def planner():
@@ -400,12 +765,13 @@ def planner():
     rospy.Subscriber( "info_"+str(uid) , GPSinfo, getInfo, uid )
     global me, robotInfo
     while not rospy.is_shutdown():
+        #print behavior
         newGoal = setGoal( str( behavior ) )
         if newGoal != 0 and newGoal != None :
-            print newGoal
+            #print newGoal
             goalPoint = PointStamped()
             goalPoint.header.stamp = rospy.Time().now()
-            goalPoint.header.frame_id = 'Local_'#+str(uid)
+            goalPoint.header.frame_id = 'Local'
             goalPoint.point = Point( newGoal.x, newGoal.y, 0 )
             pubGoalPoint.publish( goalPoint )
             pubGoal.publish( newGoal )

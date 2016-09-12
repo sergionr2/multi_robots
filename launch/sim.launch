@@ -1,19 +1,19 @@
 <launch>
 
   <node pkg="multi_robots" name="Gps" type="gps.py">
-    <param name="map" value="$(find multi_robots)/simMap.txt" />
+    <param name="map" value="$(find multi_robots)/maps/simMap.txt" />
     <param name="default_geom" value="$(find multi_robots)/robotGeometry/default.txt" />
-    <param name="noise_amplitud" value="0.000" />
+    <param name="noise_amplitud" value="0" />
     <param name="robot/-3/geom" value="$(find multi_robots)/robotGeometry/border.txt" />
     <param name="robot/-3/x" value="0" />
     <param name="robot/-3/y" value="0" />
     <param name="robot/-3/theta" value="0" />
     <!--
-    -->
     <param name="robot/-1/geom" value="$(find multi_robots)/robotGeometry/littleBox.txt" />
     <param name="robot/-1/x" value="1.3" />
     <param name="robot/-1/y" value="1.5" />
     <param name="robot/-1/theta" value="0" />
+  -->
 
     <param name="robot/-2/geom" value="$(find multi_robots)/robotGeometry/littleBox.txt" />
     <param name="robot/-2/x" value="0.8" />

@@ -20,7 +20,7 @@ Robot0 can see Robot12 position
 Robot0 cannot see Robot8 position
 
 Robot12 cannot see Robot0 position
-Robot12 can see Robot12 position and objects in a radio of 2mm from Robot8
+Robot12 can see Robot12 position and objects in a radio of 2mm from Robot12
 Robot12 cannot see Robot8 position
 
 Robot8 can see Robot0 position

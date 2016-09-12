@@ -272,7 +272,7 @@ def initTopics( ids ):
 
 def setRobotPose( robotPose ): #Getting new poses
 
-    if robotPose.id != 0 and robotPose.id <= 25: # filter ID 0 and IDs > 25 because of Noise
+    if robotPose.id != 0 and robotPose.id <= 10: # filter ID 0 and IDs > 10 because of Noise
         if idList.count( robotPose.id ) == 0 : #Add the new robot to topic list
             topicList[ robotPose.id ] = rospy.Publisher( 'info_' + str( robotPose.id ), GPSinfo, queue_size=10 )
             #add defaul geometry if needed

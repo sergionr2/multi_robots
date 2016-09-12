@@ -1,7 +1,7 @@
 <launch>
 
   <node pkg="multi_robots" name="Gps" type="gps.py">
-    <param name="map" value="$(find multi_robots)/coopMap.txt" />
+    <param name="map" value="$(find multi_robots)/maps/coopMap.txt" />
     <param name="default_geom" value="$(find multi_robots)/robotGeometry/default.txt" />
     <param name="noise_amplitud" value="0.000" />
     <param name="robot/-3/geom" value="$(find multi_robots)/robotGeometry/border.txt" />
